@@ -517,7 +517,8 @@ If case is \"default\", it is not prepended."
   (string-match "^\\*" folder))
 
 (defun mew-virtual-thread-p (vfolder)
-  (with-current-buffer vfolder
+  (save-excursion
+    (set-buffer vfolder)
     (mew-thread-p)))
 
 ;;
@@ -1115,7 +1116,8 @@ and sets buffer-file-coding-system."
   ;; string-bytes() acts differently on each Emacs.
   ;; set-buffer-multibyte is also buggy.
   ;; So, use this way.
-  (with-current-buffer buf
+  (save-excursion
+    (set-buffer buf)
     (if (fboundp 'string-as-unibyte)
 	(length (string-as-unibyte (mew-buffer-substring beg end)))
       (- end beg))))
@@ -1160,7 +1162,8 @@ and sets buffer-file-coding-system."
       (when (and (string-match regex buf)
 		 (or (not mode)
 		     (and mode (get-buffer buf)
-			  (with-current-buffer buf
+			  (save-excursion
+			    (set-buffer buf)
 			    (eq major-mode mode)))))
 	(if listp
 	    (setq ret (cons (list buf) ret))

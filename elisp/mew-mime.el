@@ -251,7 +251,8 @@
 	  ;; We need to keep composite properties of charset.
 	  ;; This must be "insert-buffer-substring".
 	  (insert-buffer-substring cache begin end)
-	  (with-current-buffer cache
+	  (save-excursion
+	    (set-buffer cache)
 	    (setq folder (mew-cinfo-get-fld)))
 	  (if (or mew-use-text/html
 		  (and mew-use-text/html-list
@@ -307,7 +308,8 @@
 	   (prog (mew-progspec-get-prog program))
 	   (args (mew-progsec-args-convert (mew-progspec-get-args program) file))
 	   wcs)
-      (with-current-buffer cache
+      (save-excursion
+	(set-buffer cache)
 	(message "Displaying %s..." tag)
 	;; charset check
 	(setq wcs (mew-text/html-detect-cs begin end))
@@ -428,7 +430,8 @@
 
 (defun mew-mime-image/*-ext (cache begin end &optional _params fname _ct _cte)
   (let ((file (mew-make-temp-name fname)))
-    (with-current-buffer cache
+    (save-excursion
+      (set-buffer cache)
       (mew-flet
        (write-region begin end file nil 'no-msg)))
     (mew-mime-image-ext file)))
@@ -552,7 +555,8 @@
       (message "Displaying an MS document...")
       (mew-erase-buffer)
       (setq file1 (mew-make-temp-name))
-      (with-current-buffer cache
+      (save-excursion
+	(set-buffer cache)
 	(mew-flet
 	 (write-region begin end file1 nil 'no-msg)))
       (setq file2 (mew-make-temp-name))
@@ -599,7 +603,8 @@
 	  (mew-mime-part-messages t)
 	  (message "Displaying a PDF document...failed"))
       (setq file1 (mew-make-temp-name))
-      (with-current-buffer cache
+      (save-excursion
+	(set-buffer cache)
 	(mew-flet
 	 (write-region begin end file1 nil 'no-msg)))
       (setq file2 (mew-make-temp-name))
@@ -637,7 +642,8 @@
 	(dir (mew-input-directory-name mew-home)))
     (if (not (mew-which-exec mew-prog-tnef))
 	(message "'%s' not found" mew-prog-tnef)
-      (with-current-buffer cache
+      (save-excursion
+	(set-buffer cache)
 	(mew-plet
 	 (write-region begin end file nil 'no-msg)))
       (mew-erase-buffer)
@@ -799,7 +805,8 @@ See `mew-mime-content-type' to know how actions can be defined."
       (message "%s does not exist" program)
     (let ((file (mew-make-temp-name fname))
 	  wcs)
-      (with-current-buffer cache
+      (save-excursion
+	(set-buffer cache)
 	;; NEVER use call-process-region for privacy reasons
 	(cond
 	 ((not (mew-ct-linebasep ct))
@@ -871,7 +878,8 @@ See `mew-mime-content-type' to know how actions can be defined."
 		       (if (y-or-n-p (format "\"%s\" as binary? " file-))
 			   mew-ct-apo mew-ct-txt)))))
 	(setq cs (if (mew-ct-textp ct) mew-cs-autoconv mew-cs-binary))
-	(with-current-buffer cache
+	(save-excursion
+	  (set-buffer cache)
 	  (delete-region beg end)
 	  (goto-char beg)
 	  (save-restriction
@@ -940,7 +948,8 @@ See `mew-mime-content-type' to know how actions can be defined."
 	 (password (if encrypted (read-passwd "Zip password: ")))
 	 (args0 (list "-o" "-d" dir zipfile))
 	 (args (if password (cons "-P" (cons password args0)) args0)))
-    (with-current-buffer buf
+    (save-excursion
+      (set-buffer buf)
       (mew-frwlet mew-cs-dummy mew-cs-binary
 	(write-region beg end zipfile nil 'no-msg)))
     (with-temp-buffer
@@ -952,7 +961,8 @@ See `mew-mime-content-type' to know how actions can be defined."
 	(mew-match-string 1)))))
 
 (defun mew-zip-encrypted-p (buf beg)
-  (with-current-buffer buf
+  (save-excursion
+    (set-buffer buf)
     (goto-char beg)
     (forward-char 6)
     (= (% (char-after) 2) 1)))

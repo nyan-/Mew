@@ -50,7 +50,8 @@
 
 (defun mew-oauth2-debug (label string)
   (when (mew-debug 'oauth2)
-    (with-current-buffer (get-buffer-create mew-buffer-debug)
+    (save-excursion
+      (set-buffer (get-buffer-create mew-buffer-debug))
       (goto-char (point-max))
       (let ((start (point)))
 	(insert (format "\n<%s>\n%s\n" label string))

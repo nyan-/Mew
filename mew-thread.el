@@ -162,8 +162,9 @@ All members must have the same length."
 (defun mew-thread-cache-valid-p (vfolder)
   (let ((cfolder (mew-summary-folder-name 'ext))
 	ofld)
-    (when (get-buffer vfolder)
-      (with-current-buffer vfolder
+    (save-excursion
+      (when (get-buffer vfolder)
+	(set-buffer vfolder)
 	(setq ofld (mew-vinfo-get-original-folder))
 	(and (equal ofld cfolder)
 	     (get-buffer ofld)
@@ -529,7 +530,8 @@ with the current folder as a candidate in addition to guessed folders."
       (dolist (msg (sort (copy-sequence (cdr ent)) '<)) ;; sort has side effect
 	(setq msg (number-to-string msg))
 	(when (get-buffer fld)
-	  (with-current-buffer fld
+	  (save-excursion
+	    (set-buffer fld)
 	    (mew-refile-reset msg)
 	    (mew-refile-set msg folders)))))))
 

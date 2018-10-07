@@ -31,7 +31,8 @@
 
 (defun mew-cache-dinfo-get-decode-broken (buf)
   (when buf
-    (with-current-buffer buf
+    (save-excursion
+      (set-buffer buf)
       (mew-cinfo-get-decode-broken))))
 
 (defvar mew-xinfo-list
@@ -41,7 +42,7 @@
 (mew-blinfo-defun 'mew-xinfo mew-xinfo-list)
 
 (defun mew-xinfo-copy (buf)
-  (set 'mew-xinfo (with-current-buffer buf (symbol-value 'mew-xinfo))))
+  (set 'mew-xinfo (save-excursion (set-buffer buf) (symbol-value 'mew-xinfo))))
 
 (defun mew-xinfo-clear ()
   (set 'mew-xinfo nil))
@@ -52,7 +53,7 @@
 ;;
 
 (defun mew-cache-decode-syntax (buf)
-  (with-current-buffer buf mew-decode-syntax))
+  (save-excursion (set-buffer buf) mew-decode-syntax))
 
 (defvar mew-cache nil
   "A list of decoded messages cache.
@@ -87,7 +88,8 @@ If MUST-HIT is non-nil and no valid cache entry is found, an error occurs."
 	(error "%s does not exist" (mew-concat-folder fld msg)))
       (setq time (mew-file-get-time file))
       (setq size (mew-file-get-size file))
-      (with-current-buffer cache
+      (save-excursion
+	(set-buffer cache)
 	(setq ok (mew-cinfo-equal fld msg time size)))
       (if ok
 	  (progn

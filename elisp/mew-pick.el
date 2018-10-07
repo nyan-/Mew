@@ -270,7 +270,7 @@ If you want to change the stored keyword, execute this command with '\\[universa
      ((or (null mwin)
 	  (not (or virtualp (equal mew-mark-review mark))) ;; MUST be equal
 	  (or (not (string= fld ofld)) (not (string= msg omsg)))
-	  (with-current-buffer mbuf (eobp)))
+	  (save-excursion (set-buffer mbuf) (eobp)))
       (cond
        (virtualp
 	(forward-line)
@@ -332,7 +332,7 @@ If you want to change the stored keyword, execute this command with '\\[universa
      ((or (null mwin)
 	  (not (or virtualp (equal mew-mark-review mark))) ;; MUST be equal
 	  (or (not (string= fld ofld)) (not (string= msg omsg)))
-	  (with-current-buffer mbuf (bobp)))
+	  (save-excursion (set-buffer mbuf) (bobp)))
       (cond
        (virtualp
 	(forward-line -1)

@@ -425,7 +425,8 @@ just obtained, so that the refresh token gets a new one next time."
   (let* ((name (process-name process))
 	 (regex (concat "^" (regexp-quote mew-passwd-encryption-name)))
 	 (encrypt-p (string-match regex name)))
-    (with-current-buffer (process-buffer process)
+    (save-excursion
+      (set-buffer (process-buffer process))
       (cond
        ((string-match "invalid passphrase" string)
 	(mew-warn "Master password mismatch!")
@@ -492,7 +493,8 @@ just obtained, so that the refresh token gets a new one next time."
 
 (defun mew-passwd-debug (label string)
   (when (mew-debug 'passwd-debug)
-    (with-current-buffer (get-buffer-create mew-buffer-debug)
+    (save-excursion
+      (set-buffer (get-buffer-create mew-buffer-debug))
       (goto-char (point-max))
       (insert (format "\n<%s>\n%s\n" label string)))))
 

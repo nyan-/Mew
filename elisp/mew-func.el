@@ -566,7 +566,8 @@ If case is \"default\", it is not prepended."
   (string-match "^\\*" folder))
 
 (defun mew-virtual-thread-p (vfolder)
-  (with-current-buffer vfolder
+  (save-excursion
+    (set-buffer vfolder)
     (mew-thread-p)))
 
 ;;
@@ -1213,7 +1214,8 @@ a device, but see the warning there."
     (push-mark (point) t t)))
 
 (defun mew-region-bytes (beg end buf)
-  (with-current-buffer buf
+  (save-excursion
+    (set-buffer buf)
     (string-bytes (mew-buffer-substring beg end))))
 
 (defun mew-count-lines (beg end)
@@ -1256,7 +1258,8 @@ a device, but see the warning there."
       (when (and (string-match regex buf)
 		 (or (not mode)
 		     (and mode (get-buffer buf)
-			  (with-current-buffer buf
+			  (save-excursion
+			    (set-buffer buf)
 			    (eq major-mode mode)))))
 	(if listp
 	    (setq ret (cons (list buf) ret))

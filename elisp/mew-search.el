@@ -779,7 +779,8 @@ Return the generated filename and match-count."
 	 (cache (mew-cache-hit fld msg))
 	 subj)
     (if (and cache (get-buffer cache))
-	(with-current-buffer cache
+	(save-excursion
+	  (set-buffer cache)
 	  (setq subj (mew-header-get-value mew-subj:)))
       (with-temp-buffer
 	(mew-insert-message
@@ -838,7 +839,8 @@ from scratch."
 
 (defun mew-summary-make-id-index-sentinel (process _event)
   (let ((buf (process-buffer process)))
-    (with-current-buffer buf
+    (save-excursion
+      (set-buffer buf)
       (goto-char (point-max))
       (forward-line -1)
       (let ((str (mew-buffer-substring (line-beginning-position)

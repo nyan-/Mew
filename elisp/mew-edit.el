@@ -126,7 +126,8 @@ by a header re-write."
 	(mew-current-get-window-config)
 	(mew-redraw)
 	(save-excursion
-	  (with-current-buffer buf
+	  (save-window-excursion
+	    (set-buffer buf)
 	    (mew-encode-make-backup)
 	    (mew-header-clear)
 	    ;; the end of the header
@@ -174,7 +175,8 @@ by a header re-write."
 	(mew-current-get-window-config)
 	(mew-redraw)
 	(save-excursion
-	  (with-current-buffer buf
+	  (save-window-excursion
+	    (set-buffer buf)
 	    (mew-encode-make-backup)
 	    (mew-header-clear)
 	    ;; the end of the header
@@ -893,8 +895,9 @@ mew-summary-reedit."
     ;; De-compose the message in the burst buffer.
     ;; do not decode Message/Rfc822 parts.
     ;; They will be just a attachment message.
-    (with-current-buffer buf
+    (save-excursion
       ;; Let's decode the message without limitations
+      (set-buffer buf)
       (mew-erase-buffer)
       (mew-insert-message fld msg mew-cs-text-for-read nil)
       (mew-dinfo-set (1+ (length part)) 'no-cs-conv t alt 'encap-html)

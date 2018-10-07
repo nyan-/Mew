@@ -392,7 +392,8 @@ this variable is set to \='t\=`.")
   (let* ((name (process-name process))
 	 (regex (concat "^" (regexp-quote mew-passwd-encryption-name)))
 	 (encrypt-p (string-match regex name)))
-    (with-current-buffer (process-buffer process)
+    (save-excursion
+      (set-buffer (process-buffer process))
       (cond
        ((string-match "invalid passphrase" string)
 	(mew-warn "Master password mismatch!")

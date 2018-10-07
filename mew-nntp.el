@@ -487,7 +487,8 @@
 	  (setq virtual (mew-net-virtual-info-get-virtual virtual-info))
 	  (when virtual
 	    (mew-nntp-set-status-buf pnm virtual)
-	    (with-current-buffer virtual
+	    (save-excursion
+	      (set-buffer virtual)
 	      (mew-summary-lock process "NNTPing" (or sshpro sslpro)))))
 	 ((eq directive 'scan)
 	  (mew-nntp-set-range pnm (nth 0 args))
@@ -511,7 +512,8 @@
 
 (defun mew-nntp-debug (label string)
   (when (mew-debug 'net)
-    (with-current-buffer (get-buffer-create mew-buffer-debug)
+    (save-excursion
+      (set-buffer (get-buffer-create mew-buffer-debug))
       (goto-char (point-max))
       (insert (format "\n<%s>\n%s\n" label string)))))
 

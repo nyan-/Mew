@@ -140,7 +140,8 @@
 	 (same-window-regexps nil)
 	 (draftname (mew-path-to-folder draft-path)))
     (when (get-buffer draftname)
-      (with-current-buffer draftname
+      (save-excursion
+	(set-buffer draftname)
 	(clear-visited-file-modtime)
 	(set-buffer-modified-p nil) ;; just in case
 	(mew-delete-file buffer-auto-save-file-name)

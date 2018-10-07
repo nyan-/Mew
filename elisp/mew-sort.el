@@ -398,7 +398,7 @@ or the region. "
 	  (progn
 	    (mew-erase-buffer)
 	    (mew-elet
-	     (insert (with-current-buffer buf (buffer-substring beg end)))
+	     (insert (save-excursion (set-buffer buf) (buffer-substring beg end)))
 	     (mew-sort-files ofolder files idx 'mew-summary-sort-move-for-selection)
 	     (mew-summary-set-count-line)
 	     (goto-char (point-min))

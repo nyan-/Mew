@@ -229,7 +229,8 @@ Binary search is used for speed reasons."
 
 (defun mew-local-debug (label string)
   (when (mew-debug 'ls)
-    (with-current-buffer (get-buffer-create mew-buffer-debug)
+    (save-excursion
+      (set-buffer (get-buffer-create mew-buffer-debug))
       (goto-char (point-max))
       (insert (format "\n<%s>\n%s\n" label string)))))
 
@@ -292,7 +293,8 @@ Binary search is used for speed reasons."
        (mew-local-set-rttl pnm (nth 4 args))))
      (mew-sinfo-set-start-point (point)) ;; after erase-buffer
      (mew-local-set-rcnt pnm 1)
-     (with-current-buffer buf
+     (save-excursion
+       (set-buffer buf)
        (mew-erase-buffer))
      (setq opts (append (list "-b" mew-mail-path
 			      "-l" (number-to-string mew-scan-max-field-length)

@@ -271,7 +271,8 @@ Set 1 if 5. Set 2 if 6. Set 3 if GNUPG. Set 4 if GNUPG2.")
 
 (defun mew-pgp-debug (label string)
   (when (mew-debug 'pgp)
-    (with-current-buffer (get-buffer-create mew-buffer-debug)
+    (save-excursion
+      (set-buffer (get-buffer-create mew-buffer-debug))
       (goto-char (point-max))
       (insert (format "\n<%s>\n%s\n" label string)))))
 
@@ -965,7 +966,8 @@ Set 1 if 5. Set 2 if 6. Set 3 if GNUPG. Set 4 if GNUPG2.")
      (let ((fld (mew-summary-folder-name))
 	   (msg (mew-summary-message-number2))
 	   type)
-       (with-current-buffer (mew-buffer-message)
+       (save-excursion
+	 (set-buffer (mew-buffer-message))
 	 ;; We need MIME-decoded buffer to check PGP boundaries.
 	 (setq type (mew-old-pgp-check))
 	 (if type
@@ -1113,7 +1115,8 @@ public keyring."
       (message "PGP not found")
     (when (y-or-n-p "Add this PGP key onto your public keyring? ")
       (setq mew-pgp-tmp-file (mew-make-temp-name))
-      (with-current-buffer cache
+      (save-excursion
+	(set-buffer cache)
 	(mew-frwlet mew-cs-dummy mew-cs-autoconv
 	  (write-region begin end mew-pgp-tmp-file nil 'no-msg))
 	(set-buffer (mew-buffer-message))
@@ -1154,7 +1157,8 @@ public keyring."
 
 (defun mew-pgp-fetch-key-by-xuri ()
   (let (val uri)
-    (with-current-buffer (mew-buffer-message)
+    (save-excursion
+      (set-buffer (mew-buffer-message))
       (catch 'loop
 	(dolist (key mew-x-pgp-key-list)
 	  (setq val (mew-header-get-value key))
@@ -1179,7 +1183,8 @@ according to a URL in a field specified by 'mew-x-pgp-key-list'."
   (if arg
       (mew-pgp-fetch-key-by-xuri)
     (let (keyid userid xmew)
-      (with-current-buffer (mew-buffer-message)
+      (save-excursion
+	(set-buffer (mew-buffer-message))
 	(setq userid (mew-header-parse-address mew-from:))
 	(setq xmew (mew-header-get-value mew-x-mew:)))
       (cond
@@ -1220,7 +1225,8 @@ according to a URL in a field specified by 'mew-x-pgp-key-list'."
 (defun mew-pgp-fetch-process-sentinel (process _event)
   (message "PGP key fetching...done")
   (let ((buf (process-buffer process)))
-    (with-current-buffer buf
+    (save-excursion
+      (set-buffer buf)
       (goto-char (point-min))
       (if (and (search-forward mew-pgp-key-begin nil t)
 	       (search-forward mew-pgp-key-end nil t))

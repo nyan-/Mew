@@ -390,7 +390,8 @@ the lower window is not zero, switch to the buffer."
     ;;
     (if (get-buffer msgbuf)
 	(delete-windows-on msgbuf)
-      (with-current-buffer (get-buffer-create msgbuf)
+      (save-excursion
+	(set-buffer (get-buffer-create msgbuf))
 	(kill-all-local-variables)
 	;; "truncate?" is asked in Message mode.
 	;; so set the same toolbar as Summary mode
@@ -423,7 +424,8 @@ the lower window is not zero, switch to the buffer."
 	(i 1))
     (walk-windows
      (lambda (win)
-       (when (with-current-buffer (window-buffer win)
+       (when (save-excursion
+	       (set-buffer (window-buffer win))
 	       (mew-summary-or-virtual-p))
 	 (if (< (car (window-edges win)) x)
 	     (setq i (1+ i)))))
@@ -592,7 +594,8 @@ It is typically called by kill-emacs-hook."
 	 (folder (if (bufferp buf) (buffer-name buf) buf))
 	 obuf)
     (if (get-buffer buf)
-	(with-current-buffer buf
+	(save-excursion
+	  (set-buffer buf)
 	  (when (mew-summary-or-virtual-p)
 	    (mew-summary-kill-subprocess)
 	    (setq obuf (mew-local-buffer-name folder))

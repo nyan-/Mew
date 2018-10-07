@@ -428,7 +428,8 @@
 
 (defun mew-ext-decode-message-header (cache begin end)
   (let (syntax start)
-    (with-current-buffer cache
+    (save-excursion
+      (set-buffer cache)
       (save-restriction
 	(narrow-to-region begin end)
 	(goto-char (point-min))

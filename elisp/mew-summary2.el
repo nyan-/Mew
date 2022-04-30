@@ -820,3 +820,7 @@ over the window. Type '\\[mew-summary-prev-page]' to see them when a message is 
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-summary2.el ends here
+
+;; Local Variables:
+;; no-native-compile: t
+;; End:

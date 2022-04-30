@@ -257,3 +257,7 @@ after ':'."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-ssh.el ends here
+
+;; Local Variables:
+;; no-native-compile: t
+;; End:

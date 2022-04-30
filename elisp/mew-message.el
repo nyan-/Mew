@@ -339,3 +339,7 @@ confused. Please use '\\[mew-message-forward]' instead."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-message.el ends here
+
+;; Local Variables:
+;; no-native-compile: t
+;; End:

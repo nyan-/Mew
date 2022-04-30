@@ -932,3 +932,7 @@ non-nil, only headers of messages are cached. If executed with
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-scan.el ends here
+
+;; Local Variables:
+;; no-native-compile: t
+;; End:

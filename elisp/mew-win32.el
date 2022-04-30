@@ -270,3 +270,7 @@
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-win32.el ends here
+
+;; Local Variables:
+;; no-native-compile: t
+;; End:

@@ -1302,3 +1302,7 @@ according to a URL in a field specified by 'mew-x-pgp-key-list'."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-pgp.el ends here
+
+;; Local Variables:
+;; no-native-compile: t
+;; End:

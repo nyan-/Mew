@@ -244,3 +244,7 @@ If called with '\\[universal-argument]', you can specify a target mark."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-virtual.el ends here
+
+;; Local Variables:
+;; no-native-compile: t
+;; End:

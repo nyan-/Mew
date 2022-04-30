@@ -1000,3 +1000,7 @@ See 'mew-mime-content-type' to know how actions can be defined."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-mime.el ends here
+
+;; Local Variables:
+;; no-native-compile: t
+;; End:

@@ -429,3 +429,7 @@ Binary search is used for speed reasons."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-local.el ends here
+
+;; Local Variables:
+;; no-native-compile: t
+;; End:

@@ -687,3 +687,7 @@ with '*' in the region are handled."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-imap2.el ends here
+
+;; Local Variables:
+;; no-native-compile: t
+;; End:

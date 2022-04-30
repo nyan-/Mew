@@ -691,3 +691,7 @@ the queue, type '\\[mew-summary-send-message]' in the queue online."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-exec.el ends here
+
+;; Local Variables:
+;; no-native-compile: t
+;; End:

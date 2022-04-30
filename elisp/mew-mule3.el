@@ -428,3 +428,7 @@
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-mule3.el ends here
+
+;; Local Variables:
+;; no-native-compile: t
+;; End:

@@ -1031,3 +1031,7 @@ Set privacy service which will be effective when \\[mew-draft-make-message]."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-draft.el ends here
+
+;; Local Variables:
+;; no-native-compile: t
+;; End:

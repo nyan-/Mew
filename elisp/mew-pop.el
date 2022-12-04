@@ -1024,7 +1024,3 @@
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-pop.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

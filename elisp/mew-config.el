@@ -660,7 +660,3 @@ fields in the header according to the new value."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-config.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

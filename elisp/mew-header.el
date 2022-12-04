@@ -549,7 +549,3 @@ Remove anonymous addresses."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-header.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

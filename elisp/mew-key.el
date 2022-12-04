@@ -688,7 +688,3 @@
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-key.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

@@ -88,7 +88,3 @@
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-blvs.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

@@ -1204,7 +1204,3 @@ That is, each line may be more than 75."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-bq.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

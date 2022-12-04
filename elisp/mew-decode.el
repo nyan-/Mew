@@ -1158,7 +1158,3 @@ Return a part syntax after moving the beginning of the content body."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-decode.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

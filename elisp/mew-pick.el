@@ -851,7 +851,3 @@ If you want to change the stored keyword, execute this command with '\\[universa
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-pick.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

@@ -1063,7 +1063,3 @@ it is deleted automatically."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-minibuf.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

@@ -1182,7 +1182,3 @@ The thread/message is specified with the mark(\\[set-mark-command])."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-thread.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

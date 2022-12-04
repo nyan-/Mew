@@ -1237,7 +1237,3 @@ Executing this command enables searching such information."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-summary4.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

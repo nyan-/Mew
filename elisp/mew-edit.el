@@ -1207,7 +1207,3 @@ mew-summary-reedit."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-edit.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

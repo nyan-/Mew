@@ -265,7 +265,3 @@ if decode fails."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-cache.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

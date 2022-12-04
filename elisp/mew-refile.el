@@ -949,7 +949,3 @@ This is very convenient to refile all messages picked by '\\[mew-summary-pick]'.
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-refile.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

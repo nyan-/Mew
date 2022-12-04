@@ -142,7 +142,3 @@ Copyright (C) 1994-2023 Mew developing team
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-demo.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

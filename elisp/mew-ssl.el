@@ -409,7 +409,3 @@ A local port number can be obtained the process name after ':'. "
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-ssl.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

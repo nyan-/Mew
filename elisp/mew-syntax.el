@@ -1058,7 +1058,3 @@ system."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-syntax.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

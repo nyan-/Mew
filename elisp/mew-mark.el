@@ -929,7 +929,3 @@ The 'o' mark is not exchangeable."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-mark.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

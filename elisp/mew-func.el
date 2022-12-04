@@ -1676,7 +1676,3 @@ by side-effect."
 ;; IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; mew-func.el ends here
-
-;; Local Variables:
-;; no-native-compile: t
-;; End:

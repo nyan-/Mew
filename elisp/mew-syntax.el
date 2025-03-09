@@ -45,6 +45,9 @@
 (defun mew-syntax-get-key (syntax)
   (aref syntax 0))
 
+(defun mew-syntax-from-alternative (syntax)
+  (listp (aref syntax 1)))
+
 (defun mew-syntax-get-begin (syntax)
   (let ((beg (aref syntax 1)))
     (if (listp beg) (car beg) beg)))
@@ -350,8 +353,8 @@
   "Display the folder name of this message, its number, its size
 and its unique id. If this is a cache message, both the unique
 id and the size are also shown.  If called with
-'\\[universal-argument]', its Message-Id: and its parent's
-Message-Id: are displayed instead.  If 'mew-use-cut-file-name' is
+`\\[universal-argument]', its Message-Id: and its parent\\='s
+Message-Id: are displayed instead.  If `mew-use-cut-file-name' is
 non-nil, the file path is pushed to the cut buffer of your window
 system."
   (interactive "P")

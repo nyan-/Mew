@@ -158,7 +158,7 @@ This is O(N^2). So, do not use this function with a large LST."
 
 (defun mew-assoc-match (key alist nth)
   "Return list in ALIST that KEY regex is matched to its NTH element.
-Case is ignored. Note that the NTH element is 't',
+Case is ignored. Note that the NTH element is `t',
 the list is always selected."
   (let ((case-fold-search t) n)
     (catch 'loop
@@ -170,7 +170,7 @@ the list is always selected."
 
 (defun mew-assoc-match2 (key alist nth)
   "Return list in ALIST whose NTH regex is matched to KEY.
-Case is ignored. Note that the NTH element is 't',
+Case is ignored. Note that the NTH element is `t',
 the list is always selected."
   (let ((case-fold-search t) n)
     (catch 'loop
@@ -182,7 +182,7 @@ the list is always selected."
 
 (defun mew-assoc-match3 (key alist nth)
   "Return list in ALIST whose NTH regex is matched to KEY.
-Case is ignored. Note that the NTH element is 't',
+Case is ignored. Note that the NTH element is `t',
 the list is always selected. The deference from mew-assoc-match2
 is that this returns the position of a selected list in addition
 to the list itself."
@@ -1066,6 +1066,12 @@ and sets buffer-file-coding-system."
       (aset ret i (aref base (% (mew-random) baselen))))
     ret))
 
+(defun mew-random-binary-string (len)
+  (let ((ret (mew-make-string len)))
+    (dotimes (i len)
+      (aset ret i (% (mew-random) 255)))
+    ret))
+
 (defun mew-random-filename (dir len nump &optional suffix)
   (let ((cnt 0) (max 20) ;; ad hoc
 	file filepath)
@@ -1193,17 +1199,28 @@ and sets buffer-file-coding-system."
     (if disp (setenv "DISPLAY" disp))
     (apply 'start-process name buffer program program-args)))
 
+(defvar mew-process-prior-locale-category "LC_ALL")
+(defvar mew-process-prior-locale-value
+  (let ((case-fold-search t)
+	(locale-prog (executable-find "locale")))
+    (with-temp-buffer
+      (if (and locale-prog
+	       (call-process locale-prog nil t nil "-a")
+	       (re-search-backward "^C.utf-?8" nil t))
+	  (match-string 0)
+	"C"))))
+
 (defun mew-start-process-lang (name buffer program &rest program-args)
   (let ((process-environment (copy-sequence process-environment)))
     (setenv "LANGUAGE" "C")
-    (setenv "LC_ALL" "C")
+    (setenv mew-process-prior-locale-category mew-process-prior-locale-value)
     (setenv "LANG" "C")
     (apply 'start-process name buffer program program-args)))
 
 (defun mew-call-process-lang (prog &optional infile buffer display &rest args)
   (let ((process-environment (copy-sequence process-environment)))
     (setenv "LANGUAGE" "C")
-    (setenv "LC_ALL" "C")
+    (setenv mew-process-prior-locale-category mew-process-prior-locale-value)
     (setenv "LANG" "C")
     (apply 'call-process prog infile buffer display args)))
 
@@ -1298,7 +1315,7 @@ and sets buffer-file-coding-system."
 (defun mew-get-my-address-regex-list ()
   "This creates a list of regular expression used to tell
 whether or not a given address is mine. The list is created
-from (mew-user), (mew-mail-address), and 'mew-mail-address-list'."
+from (mew-user), (mew-mail-address), and `mew-mail-address-list'."
   (cons (concat "^" (regexp-quote (mew-user)) "$")
 	(cons (concat "^" (regexp-quote (mew-mail-address)) "$")
 	      mew-mail-address-list)))

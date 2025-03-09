@@ -7,6 +7,8 @@
 
 (require 'mew)
 
+(declare-function string-replace "subr")
+
 (defvar mew-pop-msgid-file ".mew-msgid")
 (defvar mew-pop-folder-alist (list (mew-folder-func mew-pop-inbox-folder)))
 (defun mew-pop-folder-alist ()
@@ -21,7 +23,7 @@
 ;;;
 
 (defvar mew-pop-info-list
-  '("server" "port" "process" "ssh-process" "ssl-process" "status"
+  '("server" "port" "process" "ssh-process" "ssl-process" "ssl-p" "status"
     "directive" "bnm" "mdb"
     "rtrs" "dels" "refs" "rmvs" "kils" "left" "uidl" "range"
     "rttl" "rcnt" "dttl" "dcnt" "hlds"
@@ -81,7 +83,7 @@
 ;;;
 
 (defun mew-pop-secure-p (pnm)
-  (or (mew-pop-get-ssh-process pnm) (mew-pop-get-ssl-process pnm)))
+  (or (mew-pop-get-ssh-process pnm) (mew-pop-get-ssl-p pnm)))
 
 (defun mew-pop-command-capa (pro pnm)
   (mew-net-status (mew-pop-get-status-buf pnm)
@@ -512,8 +514,8 @@
 
 (defun mew-pop-command-auth-xoauth2 (pro pnm)
   (let* ((user (mew-pop-get-user pnm))
-         (token (mew-auth-oauth2-token-access-token))
-         (auth-string (mew-auth-xoauth2-auth-string user token)))
+	 (tag (mew-pop-passtag pnm))
+         (auth-string (mew-xoauth2-auth-string user tag (mew-pop-get-case pnm))))
     (mew-pop-process-send-string pro "AUTH XOAUTH2 %s" auth-string)
     (mew-smtp-set-status pnm "auth-xoauth2")))
 
@@ -655,6 +657,8 @@
 ;;; Launcher
 ;;;
 
+(defvar mew--gnutls-pop-greeting nil)
+
 (defun mew-pop-retrieve (case directive bnm &rest args)
   ;; in +inbox
   (let* ((server (mew-pop-server case))
@@ -703,7 +707,7 @@
       (if (null process)
 	  (if (eq directive 'exec)
 	      (mew-summary-visible-buffer bnm))
-	(mew-summary-lock process "POPing" (or sshpro sslpro))
+	(mew-summary-lock process "POPing" (or sshpro sslp))
 	(mew-sinfo-set-summary-form (mew-get-summary-form bnm))
 	(mew-sinfo-set-summary-column (mew-get-summary-column bnm))
 	(mew-sinfo-set-unread-mark nil)
@@ -715,6 +719,7 @@
 	(mew-pop-set-process pnm process)
 	(mew-pop-set-ssh-process pnm sshpro)
 	(mew-pop-set-ssl-process pnm sslpro)
+	(mew-pop-set-ssl-p pnm sslp)
 	(mew-pop-set-server pnm server)
 	(mew-pop-set-port pnm port)
 	(mew-pop-set-user pnm user)
@@ -751,7 +756,7 @@
 	    (mew-pop-set-status-buf pnm virtual)
 	    (save-excursion
 	      (set-buffer virtual)
-	      (mew-summary-lock process "POPing" (or sshpro sslpro)))))
+	      (mew-summary-lock process "POPing" (or sshpro sslp)))))
 	 ((eq directive 'scan)
 	  (mew-pop-set-range pnm (nth 0 args))
 	  (mew-pop-set-get-body pnm (nth 1 args))
@@ -771,10 +776,13 @@
 	(set-process-filter process 'mew-pop-filter)
 	(set-process-buffer process buf)
 	(when sslnp
-	  ;; GnuTLS requires a client-initiated command after the
-	  ;; session is established or upgraded to use TLS because
-	  ;; no additional greeting from the server.
-	  (mew-pop-command-capa process pnm))
+	  ;; GnuTLS receives POP greeting in its internals
+	  ;; and passes it as a return value.
+	  ;; We store the value in the variable mew--gnutls-pop-greeting
+	  ;; and pass it to the filter to process the greeting.
+	  (mew-pop-filter process
+			  (string-replace "\r\n" "\n"
+					  mew--gnutls-pop-greeting)))
 	))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

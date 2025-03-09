@@ -577,7 +577,7 @@ Return t if exists or created. Otherwise, return nil."
 ;;;
 
 (defun mew-summary-copy ()
-  "Put the refile mark(default is 'o') on this message with
+  "Put the refile mark(default is `o') on this message with
 the current folder as a candidate in addition to guessed folders."
  (interactive)
  (mew-summary-msg-or-part
@@ -594,11 +594,11 @@ the current folder as a candidate in addition to guessed folders."
   (concat mew-buffer-prefix "refile " fld))
 
 (defun mew-summary-refile (&optional report)
- "Put the refile mark(default is 'o') on this message. If already
-marked with 'o', it prints where this message will be refiled. This
+ "Put the refile mark(default is `o') on this message. If already
+marked with `o', it prints where this message will be refiled. This
 can overlay other marks. When it overlays, the cursor stays on the
 message. If it marks newly, displays the next message. If executed
-with '\\[universal-argument]', it displays how the refile rules work in Message mode."
+with `\\[universal-argument]', it displays how the refile rules work in Message mode."
  (interactive "P")
  (mew-summary-msg-or-part
   (mew-summary-refilable
@@ -830,10 +830,10 @@ refile folder."
 
 (defun mew-summary-auto-refile (&optional mew-mark-review-only)
   "Refile each message in the folder automatically. If
-'mew-refile-auto-refile-skip-any-mark' is non-nil,
+`mew-refile-auto-refile-skip-any-mark' is non-nil,
 any previously marked message will be skipped.
-If '\\[universal-argument]' is specified, only messages marked with
-'mew-mark-review' will be concerned."
+If `\\[universal-argument]' is specified, only messages marked with
+`mew-mark-review' will be concerned."
   (interactive "P")
   (mew-summary-refilable
    (mew-decode-syntax-delete)

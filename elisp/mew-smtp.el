@@ -320,8 +320,8 @@
 
 (defun mew-smtp-command-auth-xoauth2 (pro pnm)
   (let* ((user (mew-smtp-get-auth-user pnm))
-         (token (mew-auth-oauth2-token-access-token))
-         (auth-string (mew-auth-xoauth2-auth-string user token)))
+	 (tag (mew-smtp-passtag pnm))
+         (auth-string (mew-xoauth2-auth-string user tag (mew-smtp-get-case pnm))))
     (mew-smtp-process-send-string pro "AUTH XOAUTH2 %s" auth-string)
     (mew-smtp-set-status pnm "auth-xoauth2")))
 
@@ -586,6 +586,7 @@
 		;; When a validation error occurs, (car pro) will be nil.
 		;;
 		(let ((plainp (eq 'plain (plist-get (cdr pro) :type)))
+		      (greeting (plist-get (cdr pro) :greeting))
 		      (openp  (and (car pro)
 				   (eq 'open (process-status (car pro)))))
 		      ;; Falling back to a plain connection is allowed
@@ -608,7 +609,12 @@
 		   (t
 		    (setq pro (list
 			       (car pro)
-			       :error nil)))))))))
+			       :error nil))
+		    (cond
+		     ((eq proto 'pop)
+		      (setq mew--gnutls-pop-greeting greeting))
+		     ((eq proto 'imap)
+		      (setq mew--gnutls-imap-greeting greeting))))))))))
 	 (t
 	  (with-temp-message status-msg
 	    (let ((params (list :name name :buffer buf

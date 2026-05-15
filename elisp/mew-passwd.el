@@ -451,7 +451,8 @@ this variable is set to \='t\=`.")
 
 (defun mew-passwd-debug (label string)
   (when (mew-debug 'passwd-debug)
-    (with-current-buffer (get-buffer-create mew-buffer-debug)
+    (save-excursion
+      (set-buffer (get-buffer-create mew-buffer-debug))
       (goto-char (point-max))
       (insert (format "\n<%s>\n%s\n" label string)))))
 

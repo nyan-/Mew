@@ -402,7 +402,8 @@ If executed with `\\[universal-argument]', coding-system is asked."
   (interactive)
   (mew-summary-msg
    (let ((file (mew-make-temp-name)) bimi)
-     (with-current-buffer (mew-buffer-message)
+     (save-excursion
+       (set-buffer (mew-buffer-message))
        (setq bimi (base64-decode-string (mew-header-get-value mew-bimi-indicator:))))
      (when bimi
        (with-temp-buffer

@@ -443,7 +443,8 @@ should be encoded as format=flowed."
                          (cons "Use-Flowed:" t)
                          (cons "Message:" nil))
                    (current-buffer)))
-          (with-current-buffer (find-file-noselect draft)
+          (save-excursion
+            (set-buffer (find-file-noselect draft))
             (unwind-protect
                 (progn
                   (should (mew-encode-load-syntax))

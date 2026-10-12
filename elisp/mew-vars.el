@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 ;;; mew-vars.el --- Variables and Constants for Mew
 
 ;; Author:  Mew developing team
@@ -2745,11 +2745,7 @@ Otherwise, the old cases are overridden."
 ;;;
 
 (defcustom mew-temp-file-initial
-  (expand-file-name (user-login-name) (if (fboundp 'temp-directory)
-					  (temp-directory)
-					(if (boundp 'temporary-file-directory)
-					    temporary-file-directory
-					  "/tmp")))
+  (expand-file-name (user-login-name) temporary-file-directory)
   "*Hint to make a secure directory on the local file system. On
 setup phase Mew make a secure directory from this variable and set
 mew-temp-file a file name prefix contained the directory name. The
@@ -2817,7 +2813,7 @@ Its format is key:mode where more is found in `mew-sort-mode'."
 of a specific folder. An example is follows:
 \(setq mew-sort-default-key-alist
       \\='((\"+tmp/beginners\" \"x-sequence\")
-        (\"+tmp/elips\" \"x-mail-count\")))"
+        (\"+tmp/elisp\" \"x-mail-count\")))"
   :group 'mew-summary
   :type '(list (list string string)))
 

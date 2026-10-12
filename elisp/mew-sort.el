@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 ;;; mew-sort.el --- Sorting messages for Mew
 
 ;; Author:  Mew developing team
@@ -323,7 +323,8 @@
   (let ((win (selected-window))
 	(key nil) (idx nil)
 	(files nil) (range nil) (func1 nil) (func2 nil) diag)
-    (mew-set '(range beg end) (mew-sort-get-range arg))
+    ;; nil skips a value; this one does not narrow to the region.
+    (mew-set '(range nil nil) (mew-sort-get-range arg))
     (mew-set '(key func1 func2) (mew-sort-ask-key folder))
     (setq diag (if arg folder (format "%s: %s" folder range)))
     ;;
@@ -440,8 +441,8 @@ If this command is used in a remote folder,
 local cache messages are packed."
   (interactive "P")
   (if (not force)
-      (message (mew-substitute-for-summary
-		"Pack breaks search index, so pack was obsoleted. Type '\\[universal-argument]\\[mew-summary-pack]' to force pack."))
+      (message "%s" (mew-substitute-for-summary
+		     "Pack breaks search index, so pack was obsoleted. Type '\\[universal-argument]\\[mew-summary-pack]' to force pack."))
     (mew-summary-only
      (mew-summary-local-only
       (mew-summary-not-in-queue

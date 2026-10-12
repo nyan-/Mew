@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 ;;; mew-edit.el
 
 ;; Author:  Mew developing team
@@ -771,7 +771,7 @@ The message is assumed to be a valid MIME message."
   (mew-mark-kill-line)
   (set-buffer-modified-p nil)
   ;; Need to delete Message window because the target message will be
-  ;; modified and its content wiil be changed.
+  ;; modified and its content will be changed.
   (mew-current-set-window-config)
   (mew-window-configure 'draft)
   ;; main part

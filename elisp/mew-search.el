@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 ;;; mew-search.el --- Index Search
 
 ;; Author:  Mew developing team
@@ -7,6 +7,7 @@
 ;;; Code:
 
 (require 'mew)
+(require 'url-util) ;; url-path-allowed-chars
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -17,6 +18,7 @@
 (defvar mew-prog-wds       "wdsgrep.exe")
 (defvar mew-prog-google    "gdgrep.rb")
 (defvar mew-prog-est       "estcmd")
+(defvar mew-prog-notmuch   "notmuch")
 
 (mew-defstruct search
 	       key name prog
@@ -46,7 +48,11 @@
 	 mew-est-index-folder mew-est-index-all
 	 mew-pick-canonicalize-pattern-est
 	 nil nil
-	 mew-est-input-filter)))
+	 mew-est-input-filter)
+    (notmuch "Notmuch" ,mew-prog-notmuch
+	 nil mew-search-virtual-with-notmuch
+	 mew-notmuch-index-folder mew-notmuch-index-all
+	 nilnil nil nil)))
 
 (defun mew-search-get-list (func)
   (let ((sw mew-search-switch)
@@ -102,7 +108,7 @@ with a search method. Then put the '*' mark onto them. "
 			   (read-string (concat name " pick pattern: "))
 			 (mew-input-pick-pattern (concat name " pick"))))
 	 (if (and (string= pattern "") (not (fboundp flt-func)))
-	     (message (mew-substitute-for-summary "Keyword must be specified. You may use '\\[mew-summary-pick]' instead"))
+	     (message "%s" (mew-substitute-for-summary "Keyword must be specified. You may use '\\[mew-summary-pick]' instead"))
 	   (when (and canon-func (fboundp canon-func))
 	     (setq pattern (funcall canon-func pattern)))
 	   (if (fboundp flt-func)
@@ -136,7 +142,7 @@ with a search method."
 			   (read-string (concat name " virtual pattern: "))
 			 (mew-input-pick-pattern (concat name " virtual"))))
 	(if (and (string= opattern "") (not (fboundp flt-func)))
-	    (message (mew-substitute-for-summary "Keyword must be specified"))
+	    (message "%s" (mew-substitute-for-summary "Keyword must be specified"))
 	  (if (string= opattern "") (setq opattern " "))
 	  (if (and canon-func (fboundp canon-func))
 	      (setq pattern (funcall canon-func opattern))
@@ -507,6 +513,12 @@ with a search method."
 (defvar mew-search-est-db "casket")
 (defvar mew-prog-est-update "mewest")
 
+(defun mew-search-est-path-encode (path)
+  "Encode PATH the way Hyper Estraier stores it in the @uri attribute.
+That is a percent-encoded file URI, where a space becomes %20 while an
+underscore and a slash are left alone."
+  (url-hexify-string path url-path-allowed-chars))
+
 (defun mew-search-est (pattern path filter)
   (setq pattern (mew-cs-encode-string pattern mew-cs-est))
   (if (string= filter "")
@@ -531,7 +543,8 @@ with a search method."
       (setq path (substring path (match-end 0)))
       (mew-plet
        (mew-alet
-	(setq attr (format "@uri STRINC %s" (mew-q-encode-string path ?%)))
+	(setq attr (format "@uri STRINC %s"
+			   (mew-search-est-path-encode path)))
 	(cond
 	 ((string-match "^ *ANDNOT " pattern)
 	  (setq pattern (concat "[UVSET] " pattern)))
@@ -550,7 +563,7 @@ with a search method."
 
 (defun mew-search-with-est (pattern folder filter)
   (let* ((path (mew-expand-folder folder))
-	 (regex (format "file://.*/%s/.*/\\([0-9]+\\)\\(%s\\)?$"
+	 (regex (format "file://.*?/%s/.*/\\([0-9]+\\)\\(%s\\)?$"
 			(file-name-nondirectory mew-mail-path)
 			(regexp-quote mew-suffix)))
 	 msgs)
@@ -566,7 +579,7 @@ with a search method."
       (mapcar 'number-to-string msgs))))
 
 (defun mew-search-virtual-with-est (pattern flds filter)
-  (let* ((regex (format "file://.*/%s/\\(.*\\)/\\([0-9]+\\)\\(%s\\)?$"
+  (let* ((regex (format "file://.*?/%s/\\(.*\\)/\\([0-9]+\\)\\(%s\\)?$"
 			(file-name-nondirectory mew-mail-path)
 			(regexp-quote mew-suffix)))
 	 (file (mew-make-temp-name))
@@ -632,6 +645,52 @@ with a search method."
 
 (defun mew-est-index-sentinel (_process _event)
   (save-excursion ))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Notmuch
+;;;
+
+(if (and (boundp 'current-language-environment)
+	 (string-match "^\\(Japanese\\|Korean\\|Chinese\\)"
+		       current-language-environment))
+    (setenv "XAPIAN_CJK_NGRAM" "1"))
+
+(defun mew-search-notmuch (pattern _path)
+  "Perform call-process notmuch search --output=files PATTERN.
+Inserts the absolute paths of the found emails into the current buffer."
+  (setq pattern (mew-cs-encode-string pattern 'utf-8))
+  (let* ((ent (mew-search-get-ent mew-search-method))
+	 (prog (mew-search-get-prog ent)))
+    (mew-plet
+     (mew-alet
+      (call-process prog nil t nil
+		    "search"
+		    "--output=files"
+		    "--limit=1000"
+		    "--sort=oldest-first"
+		    pattern)))))
+
+(defun mew-search-virtual-with-notmuch (pattern _flds &optional _filter)
+  "Create a file listing the absolute paths of all found emails.
+Return the generated filename and match-count."
+  (let* ((file (mew-make-temp-name)) (rttl 0))
+    (mew-search-notmuch pattern nil)
+    (setq rttl (count-lines (point-min) (point-max)))
+    (mew-frwlet mew-cs-text-for-read mew-cs-text-for-write
+      (write-region (point-min) (point-max) file nil 'no-msg))
+    (list file rttl)))
+
+(defun mew-notmuch-index-folder (_folder)
+  "Perform notmuch new."
+  (mew-notmuch-index-all))
+
+(defun mew-notmuch-index-all ()
+  "Perform notmuch new."
+  (let* ((ent (mew-search-get-ent mew-search-method))
+	 (prog (mew-search-get-prog ent)))
+    (start-process prog nil prog "new")
+    (message "Notmuch indexing new messages in background...")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -731,7 +790,7 @@ with a search method."
   (mew-summary-only
    (cond
     ((not (file-exists-p (expand-file-name mew-id-db-file mew-mail-path)))
-     (message (mew-substitute-for-summary "Type '\\[mew-summary-make-id-index-all]' to create ID database")))
+     (message "%s" (mew-substitute-for-summary "Type '\\[mew-summary-make-id-index-all]' to create ID database")))
     ((not (mew-which-exec mew-prog-cmew))
      (message "%s not found" mew-prog-cmew))
     (t

@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 ;;; mew-decode.el --- MIME syntax decoder for Mew
 
 ;; Author:  Mew developing team
@@ -93,7 +93,7 @@
 
 (defun mew-decode-error (error-msg)
   (mew-xinfo-set-decode-err error-msg)
-  (error error-msg))
+  (error "%s" error-msg))
 
 (defun mew-decode-error2 (error-msg)
   (mew-xinfo-set-decode-err error-msg))
@@ -282,7 +282,7 @@ Return the existence MIME-Version: and the value of Subject:."
 	       "Too large, truncated (the 'T' mark). To get the entire message, type '\\[mew-summary-retrieve-message]'"))))
 	  ((string-match "^Content-" key)
 	   ;; Due to PGP/MIME, properties are not put here.
-	   :; This must be "buffer-substring".
+	   ;; This must be "buffer-substring".
 	   (setq mimep2 t)
 	   (setq contents (cons (buffer-substring beg (point)) contents))
 	   (delete-region beg (point)))
@@ -532,7 +532,7 @@ Return a part syntax after moving the beginning of the content body."
 	 (beg (point))
 	 opt file decoded switch)
     (unless (or (null cte) (mew-cte-composite-p cte))
-      (when (and (mew-case-equal cte mew-b64) (fboundp 'base64-decode-region))
+      (when (mew-case-equal cte mew-b64)
 	(condition-case nil
 	    (setq decoded (base64-decode-region beg (point-max)))
 	  (error (setq decoded nil)))
@@ -709,7 +709,7 @@ Return a part syntax after moving the beginning of the content body."
 	       (string-match mew-buffer-cache-prefix (buffer-name)))
       (mew-highlight-body-region (mew-syntax-get-begin syntax) (point-max)))
     (unless hend
-      (mew-syntax-set-end syntax (point-max))) ;; ajusting
+      (mew-syntax-set-end syntax (point-max))) ;; adjusting
     (if encap
 	;; Mew allows text/plain and multipart/* for body.
 	;; If other CT: is embedded under message, it should be

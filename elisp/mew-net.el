@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 ;;; mew-net.el
 
 ;; Author:  Mew developing team
@@ -206,8 +206,7 @@
 ;;;
 
 (defun mew-time-diff (t1 t2)
-  (/ (+ (* (- (nth 0 t2) (nth 0 t1)) 65536)
-	(- (nth 1 t2) (nth 1 t1)))
+  (/ (mew-time-calc t1 t2)
      86400.0)) ;; one day (* 60 60 24)
 
 (defun mew-expired-p (time keep)
@@ -218,7 +217,7 @@
     (if (>= (mew-time-diff time (mew-file-get-time (nth 0 keep))) (nth 1 keep))
 	t))
    ((integerp keep)
-    (if (>= (mew-time-diff time (current-time)) keep) t))
+    (if (>= (mew-time-diff time nil) keep) t))
    ;; ((eq keep t) t)
    ;; This case MUST not be included because messages marked with 'T'
    ;; will be deleted.

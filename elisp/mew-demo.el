@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 ;;; mew-demo.el --- Startup demo for Mew
 
 ;; Author:  Mew developing team
@@ -7,6 +7,8 @@
 ;;; Code:
 
 (require 'mew-vars)
+
+(declare-function image-size "image.c")
 
 (defvar mew-logo nil)
 

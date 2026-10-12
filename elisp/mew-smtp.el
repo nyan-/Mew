@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 ;;; mew-smtp.el
 
 ;; Author:  Mew developing team
@@ -235,7 +235,7 @@
     (mew-smtp-log pnm)
     (if (mew-smtp-get-bcc pnm)
 	(mew-smtp-bcc pro pnm back)
-      (mew-smtp-set-status pro "next")
+      (mew-smtp-set-status pnm "next")
       (mew-smtp-command-next pro pnm))))
 
 (defun mew-smtp-command-quit (pro pnm)
@@ -598,8 +598,8 @@
 	(mew-smtp-log pnm error)
 
 	(if (memq system-type '(windows-nt ms-dos cygwin))
-	    (message (format "%s  This mail has been queued to %s" error qfld))
-	  (message-box (format "%s  This mail has been queued to %s" error qfld))))
+	    (message "%s  This mail has been queued to %s" error qfld)
+	  (message-box "%s  This mail has been queued to %s" error qfld)))
        (done
 	(message "Sending in background...done"))
        (t

@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 ;;; mew-scan.el --- Scanning messages for Mew
 
 ;; Author:  Mew developing team
@@ -175,10 +175,12 @@ effect to this function."
     (if (not (string-match mew-time-rfc-regex s))
 	"0000"
       (setq year (mew-time-rfc-year))
+      ;; RFC 5322 4.3: two digits under 50 are 20xx, and anything else
+      ;; of two or three digits is 19xx.
       (cond
        ((< year 50)
 	(setq year (+ year 2000)))
-       ((< year 100)
+       ((< year 1000)
 	(setq year (+ year 1900))))
       (number-to-string year))))
 
@@ -360,8 +362,15 @@ Address is converted by `mew-summary-form-extract-addr'. See also
 (defun mew-sumsym-decode-folder (fld)
   (mew-replace-character fld ?\t ? ))
 
-(defun mew-scan-get-line (mew-vec mew-inherit-width)
-  (let* ((mew-inherit-total 0) (fld "")
+(defun mew-scan-get-line (vec width)
+  ;; mew-vec and mew-inherit-width have to be bound dynamically: the
+  ;; (MEW-FOO) accessors and mew-scan-get-piece read them.  Naming the
+  ;; arguments after them did that too, but only because they are
+  ;; special, which the compiler reports as an argument shadowing a
+  ;; dynamic variable.  A let says it outright.
+  (let* ((mew-vec vec)
+	 (mew-inherit-width width)
+	 (mew-inherit-total 0) (fld "")
 	 (line (mapconcat 'mew-scan-get-piece (mew-sinfo-get-summary-form) ""))
 	 par-id my-id msg ld uid siz irt-list)
     (setq my-id (or (mew-idstr-get-first-id (MEW-ID)) ""))
@@ -505,8 +514,10 @@ Address is converted by `mew-summary-form-extract-addr'. See also
     (if (and n (< n len)) (setq ali (nth n mew-scan-fields-alias)))
     (if (stringp ali) (symbol-function (intern-soft (concat "MEW-" ali))))))
 
-(defun mew-scan-inbox-action (mew-vec case)
-  (let ((alist (mew-inbox-action-alist case))
+(defun mew-scan-inbox-action (vec case)
+  ;; mew-vec is read by the (MEW-FOO) accessors which val-func calls.
+  (let ((mew-vec vec)
+	(alist (mew-inbox-action-alist case))
 	key val val-func ret mark-or-dst regex-list)
     (catch 'loop
       (dolist (ent alist)
@@ -545,9 +556,11 @@ Address is converted by `mew-summary-form-extract-addr'. See also
     "^[ \t]*\\(On\\|At\\) .*[^.! \t\n][ \t]*$"
     "^[ \t]*In \\(message\\|article\\|mail\\|news\\|<\\|\"\\|\\[\\|(\\)"))
 
-(defun mew-scan-body (mew-vec &optional draftp)
+(defun mew-scan-body (vec &optional draftp)
   (forward-line)
-  (let* ((i 0) (I mew-scan-max-body-length)
+  ;; mew-vec is read by (MEW-CT) and (MEW-CTE) below.
+  (let* ((mew-vec vec)
+	 (i 0) (I mew-scan-max-body-length)
 	 (j 0) (J mew-scan-body-length)
 	 (ctr (MEW-CT))
 	 (cte (MEW-CTE))
@@ -799,10 +812,7 @@ non-nil, only headers of messages are cached. If executed with
   (cond
    ((null t1) nil)
    ((null t2) t) ;; do update
-   ((> (nth 0 t1) (nth 0 t2)) t)
-   ((= (nth 0 t1) (nth 0 t2))
-    (if (> (nth 1 t1) (nth 1 t2)) t nil)) ;; nil if equal
-   (t nil)))
+   (t (time-less-p t2 t1))))
 
 (defun mew-summary-folder-dir-newp ()
   (let* ((folder (mew-summary-folder-name 'ext))

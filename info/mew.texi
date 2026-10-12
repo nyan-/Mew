@@ -25,7 +25,6 @@
 
 @titlepage
 @sp 10
-@center
 @title Mew
 @ifset ja
 @author Copyright @copyright{}1996-2026 Mew developing team.
@@ -294,11 +293,11 @@ the name.
 @end ifset
 
 @ifset ja
-Emacs 26.1 以降を使って下さい。これらより前のバージョンや XEmacs は、サ
+Emacs 27.1 以降を使って下さい。これらより前のバージョンや XEmacs は、サ
 ポートしていません。
 @end ifset
 @ifset en
-Please use Emacs 26.1 or later. Mew doesn't support earlier versions
+Please use Emacs 27.1 or later. Mew doesn't support earlier versions
 nor XEmacs.
 @end ifset
 
@@ -2873,7 +2872,7 @@ Toggle warning level. If @samp{mew-warning-field-level} is 2, set it to
 @ifset en
 @section Invalid messages
 @end ifset
-@vindex mew-decode-quoted
+@vindex mew-decode-broken
 @kindex C-u. (Summary)
 @kindex C-cC-l (Summary)
 @kindex C-uC-cC-l (Summary)
@@ -4653,7 +4652,7 @@ the header and the body
 @kindex C-f (Attach)
 @kindex C-b (Attach)
 @kindex c (Attach)
-@kindex i (Attach)
+@kindex l (Attach)
 @kindex d (Attach)
 @kindex m (Attach)
 @kindex f (Attach)
@@ -4665,6 +4664,7 @@ the header and the body
 @kindex D (Attach)
 @kindex T (Attach)
 @kindex t (Attach)
+@kindex I (Attach)
 @kindex C (Attach)
 @kindex P (Attach)
 
@@ -4840,7 +4840,7 @@ The following is a summary of commands in the attachments region.
 ルをコピーする場合は、"/[user@@]hostname:/filepath" の形式でファイルを指
 定。
 @item l
-ファイルへシンボッリクリンクを張る。"." 上で有効。添付ファイルを 
+ファイルへシンボリックリンクを張る。"." 上で有効。添付ファイルを 
 @samp{f} を使って読み込んで編集する場合は、実体を編集してしまわないよう
 に、@samp{l} ではなく @samp{c} でコピーすべき。
 @item d
@@ -8298,7 +8298,7 @@ messages. If you want to limit it to 3000 messages, put the following to
 @end ifset
 @ifset en
 The function name to provide this feature is
-@samp{mew-refile-guess-by-message-id}.
+@samp{mew-refile-guess-by-thread}.
 @end ifset
 
 @c %%%%%%%%%%%%%%%%%
@@ -9055,7 +9055,7 @@ asked to input the field name as follows:
 @end ifset
 
 @example
-Sort by? (default date): 
+Sort by? (date):
 @end example
 
 @ifset ja
@@ -9334,6 +9334,26 @@ to a specified pattern. If you want to specify multiple folders,
 separate them with ",". You can also use a wildcard "*".
 @end ifset
 @end table
+
+@ifset ja
+@samp{?} と @samp{/} は、メールのファイルをそのままの形で走査します。ヘッ
+ダの非 ASCII 文字は RFC 2047 にしたがって符号化されており、本文も Base64
+などで符号化されていることが多いので、日本語などを指定しても見つかりませ
+ん。これらで探せるのは ASCII だけです。
+
+検索エンジンを使う @samp{k?} と @samp{k/} は、符号化を解いた後の内容に対
+して索引を作ります。よって、非 ASCII の文字列はこちらで探して下さい。
+@end ifset
+@ifset en
+@samp{?} and @samp{/} read the message files as they are. Non-ASCII
+characters in a header are encoded as RFC 2047 says, and a body is
+often encoded with Base64 or the like, so a pattern which is not ASCII
+matches nothing. Only ASCII can be found with them.
+
+The search engines behind @samp{k?} and @samp{k/} index a message
+after its encodings are undone. So, look for a non-ASCII string with
+those instead.
+@end ifset
 
 @c %%%%%%%%%%%%%%%%%
 @node condition, dbsearch, search, Virtual
@@ -9698,7 +9718,7 @@ A reverse version of @samp{C-uM-n}.
 @kindex ( (Virtual)
 @kindex ) (Virtual)
 @kindex t* (Virtual)
-@kindex t@ (Virtual)
+@kindex t$ (Virtual)
 @kindex td (Virtual)
 @kindex tM-d (Virtual)
 @kindex to (Virtual)
@@ -11786,7 +11806,7 @@ message-id = *random*.nntp-msgid-user@@nntp-msgid-domain
 
 @ifset ja
 Mew では、メッセージを送信する際に SMTP を利用します。SMTP サーバが認証
-を要求した場合、Mew は自動的にユーザにバスワードの入力を求めます。ここ
+を要求した場合、Mew は自動的にユーザにパスワードの入力を求めます。ここ
 では、SMTP を制御するための以下の変数についてまとめます。
 @end ifset
 @ifset en
@@ -12053,33 +12073,43 @@ keys.
 @end ifset
 
 @example
-name, user, mail-domain, 
-cc, fcc, dcc, reply-to, organization, header-alist, proto, 
-smtp-server, smtp-port, smtp-ssh-server, smtp-ssl, smtp-ssl-port, 
-smtp-user, smtp-auth-list, 
-smtp-msgid-user, smtp-msgid-domain, smtp-helo-domain, smtp-mail-from, 
-pop-server, pop-port, pop-ssh-server, pop-ssl, pop-ssl-port, 
-pop-user, pop-auth, pop-auth-list, 
+name, user, mail-domain,
+cc, bcc, fcc, dcc, reply-to, organization, header-alist, proto,
+use-x-mailer, use-format-flowed,
+safe-addresses, safe-domains, warn-addresses, warn-domains,
+smtp-server, smtp-port, smtp-ssh-server, smtp-ssl, smtp-ssl-port,
+smtp-user, smtp-auth-list, use-smtp-auth, smtp-auth-plain-authorize-id,
+smtp-msgid-user, smtp-msgid-domain, smtp-helo-domain, smtp-mail-from,
+pop-server, pop-port, pop-ssh-server, pop-ssl, pop-ssl-port,
+pop-user, pop-auth, pop-auth-list,
 pop-size, pop-header-only, pop-delete, pop-body-lines,
 pop-proxy-server, pop-proxy-port,
-imap-server, imap-port, imap-ssh-server, imap-ssl, imap-ssl-port, 
-imap-user, imap-auth, imap-auth-list, 
-imap-size, imap-header-only, imap-delete, 
-imap-trash-folder, imap-queue-folder, imap-spam-field, imap-spam-word,
+imap-server, imap-port, imap-ssh-server, imap-ssl, imap-ssl-port,
+imap-user, imap-auth, imap-auth-list,
+imap-size, imap-header-only, imap-delete,
+imap-inbox-folder, imap-trash-folder, imap-trash-folder-list,
+imap-queue-folder, imap-spam-folder, imap-spam-field, imap-spam-word,
+imap-spam-pattern, imap-friend-folder, imap-prefix-list,
 imap-proxy-server, imap-proxy-port,
-nntp-server, nntp-port, nntp-ssh-server, nntp-ssl, nntp-ssl-port, 
-nntp-user, nntp-size, nntp-header-only, 
-nntp-msgid-user, nntp-msgid-domain, 
-prog-ssl-arg, ssl-cert-directory, ssl-verify-level, 
-inbox-folder, queue-folder, postq-folder, 
+nntp-server, nntp-port, nntp-ssh-server, nntp-ssl, nntp-ssl-port,
+nntp-user, nntp-size, nntp-header-only, nntp-newsgroup,
+nntp-msgid-user, nntp-msgid-domain,
+ssh-prog, ssh-prog-args, ssh-prog-ver,
+prog-ssl-arg, ssl-cert-directory, ssl-verify-level,
+ssl-algorithm-priority, ssl-client-keycert-list, ssl-trustfiles,
+ssl-proxy-server, ssl-proxy-port,
+oauth2-client-id, oauth2-client-secret,
+oauth2-redirect-url, oauth2-redirect-port,
+oauth2-auth-url, oauth2-token-url, oauth2-resource-url,
+inbox-folder, queue-folder, postq-folder, inbox-action-alist,
 mailbox-type, mbox-command, mbox-command-arg,
-signature-file, content-type, refile-guess-alist, 
-spam-prog, spam-prog-args, ham-prog, ham-prog-args, 
-use-old-pgp, pgp-signer, smime-signer, privacy-method, 
-protect-privacy-always, protect-privacy-always-type, 
-protect-privacy-encrypted, protect-privacy-encrypted-type, 
-protect-privacy-with-old-pgp-signature,
-use-format-flowed
+signature-file, content-type, refile-guess-alist,
+spam-prog, spam-prog-args, ham-prog, ham-prog-args,
+use-old-pgp, pgp-signer, smime-signer,
+draft-privacy-method,
+protect-privacy-always, protect-privacy-always-type,
+protect-privacy-encrypted, protect-privacy-encrypted-type,
+protect-privacy-with-old-pgp-signature
 @end example
 
 @ifset ja
@@ -13339,7 +13369,7 @@ non-employee's addresses to red.
 トになります。Mew は以下のルールに従って、警告するアドレスを決めます。
 @end ifset
 @ifset en
-There are four variables to decide which address should trun red.
+There are four variables to decide which address should turn red.
 They are all a list of strings. Mew takes the following rules:
 @end ifset
 
@@ -13598,6 +13628,7 @@ The same as the other commands in Draft mode
 @vindex mew-oauth2-client-id
 @vindex mew-oauth2-client-secret
 @vindex mew-oauth2-redirect-url
+@vindex mew-oauth2-redirect-port
 @vindex mew-oauth2-auth-url
 @vindex mew-oauth2-token-url
 @vindex mew-oauth2-resource-url
@@ -13821,10 +13852,10 @@ continue to use "mewencode". (If Base64 is implemented by Emacs, Mew
 uses the native function.)
 
 @item Why does the cursor jump onto the end of line when searching(@samp{C-s}, @samp{C-r})?
-Thread informations are not displayed in Summary mode. This is because
-the "invisible" property is dynamically put onto them when
-displayed. Strings with this property is not a target of the string
-search. But, thread informations of undisplayed lines do not have this
+Thread information is not displayed in Summary mode. This is because
+the "invisible" property is dynamically put onto it when
+displayed. Strings with this property are not targets of the string
+search. But, thread information of undisplayed lines does not have this
 property, so the string search targets them. Then a matched line is
 displayed and the "invisible" property is put. So, it seems to you that
 the string search matches the end of the line. Mew puts the "invisible"

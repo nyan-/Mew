@@ -1,5 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
-;;-*-coding:euc-kr;-*-
+;;; -*- coding: euc-kr; lexical-binding: t; -*-
 ;;; mew-lang-kr.el --- Korean specific stuff for Mew
 
 ;; Author:  Mew developing team

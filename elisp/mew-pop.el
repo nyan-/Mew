@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 ;;; mew-pop.el
 
 ;; Author:  Mew developing team
@@ -44,7 +44,8 @@
 (defvar mew-pop-fsm
   '(("greeting"      nil ("\\+OK" . "capa"))
     ("capa"          t   ("\\+OK" . "auth") ("-ERR" . "pswd"))
-    ("xoauth2"       nil ("\\+OK" . "list") ("-ERR" . "wpwd"))
+    ("auth-xoauth2"  nil ("\\+OK" . "token-xoauth2") ("-ERR" . "wpwd"))
+    ("token-xoauth2" nil ("\\+OK" . "list") ("-ERR" . "wpwd"))
     ("auth-cram-md5" nil ("\\+OK" . "pwd-cram-md5") ("-ERR" . "wpwd"))
     ("pwd-cram-md5"  nil ("\\+OK" . "list") ("-ERR" . "wpwd"))
     ("auth-plain"    nil ("\\+OK" . "pwd-plain") ("-ERR" . "wpwd"))
@@ -239,7 +240,10 @@
 	 (del-time (mew-pop-get-delete pnm))
 	 (bnm (mew-pop-get-bnm pnm))
 	 (range (mew-pop-get-range pnm))
-	 (ctime (current-time))
+	 ;; Keep timestamps in (HI LO USEC PSEC) form,
+	 ;; so that the generated files can be read
+	 ;; by Mew versions predating August 2026.
+	 (ctime (time-convert nil 'list))
 	 (left 0)
 	 rtr rtrs dels num uid uidl old-uidl uid-time hlds)
     (cond
@@ -514,11 +518,17 @@
   (nth 1 (mew-assoc-case-equal auth mew-pop-auth-alist 0)))
 
 (defun mew-pop-command-auth-xoauth2 (pro pnm)
+  ;; MS365 does not accept "AUTH XOAUTH2 <token>" in a single line.
+  ;; It requires the SASL continuation exchange: send "AUTH XOAUTH2",
+  ;; wait for the "+ " response, then send the token separately.
+  (mew-pop-process-send-string pro "AUTH XOAUTH2")
+  (mew-pop-set-status pnm "auth-xoauth2"))
+
+(defun mew-pop-command-token-xoauth2 (pro pnm)
   (let* ((user (mew-pop-get-user pnm))
 	 (tag (mew-pop-passtag pnm))
          (auth-string (mew-xoauth2-auth-string user tag (mew-pop-get-case pnm))))
-    (mew-pop-process-send-string pro "AUTH XOAUTH2 %s" auth-string)
-    (mew-smtp-set-status pnm "auth-xoauth2")))
+    (mew-pop-process-send-string pro "%s" auth-string)))
 
 (defun mew-pop-command-auth-cram-md5 (pro pnm)
   (mew-pop-process-send-string pro "AUTH CRAM-MD5")

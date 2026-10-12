@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 ;;; mew-imap.el for reading
 
 ;; Author:  Mew developing team
@@ -312,7 +312,7 @@
 	(setq siz (mew-match-string 1)))
       (when (looking-at ".*FLAGS (\\([^)]*\\)") ;; MUST be a list of flags
 	(setq flags (mew-match-string 1))
-	(if (string-match "Flagged" flags) ;; \\\\ is urgly
+	(if (string-match "Flagged" flags) ;; \\\\ is ugly
 	    (setq mdb (cons (list uid mew-mark-review) mdb))
 	  (if (string-match "Seen" flags)
 	      (setq mdb (cons (list uid mew-mark-read) mdb)))))
@@ -1113,7 +1113,7 @@
 	 (namespace (assoc mew-imap-inbox-folder alist)))
     (if (= (length namespace) mew-imap-namespace-length)
 	namespace
-      (error (mew-substitute-for-summary "Type '\\[universal-argument]\\[mew-status-update]' to collect IMAP folders!")))))
+      (error "%s" (mew-substitute-for-summary "Type '\\[universal-argument]\\[mew-status-update]' to collect IMAP folders!")))))
 
 (defun mew-imap-namespace-sep (namespace)
   (nth 1 namespace))

@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 ;;; mew-gemacs.el --- Environment of Graphical Emacs for Mew
 
 ;; Author:  Mew developing team
@@ -7,6 +7,8 @@
 ;;; Code:
 
 (require 'mew)
+
+(defvar tool-bar-map)
 
 (defvar mew-prog-pamscale (or (executable-find "pamscale") "pnmscale"))
 (defvar mew-prog-pamscale-opt

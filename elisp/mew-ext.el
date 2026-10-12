@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 ;;; mew-ext.el --- Message/External-Body support for Mew
 
 ;; Author:  Mew developing team
@@ -144,8 +144,9 @@
 (defun mew-create-content-id ()
   ;; this is not unique if used with very short interval.
   ;; but it's ok
-  (format "<%s.%s.%s@%s>" (nth 0 (current-time)) (nth 1 (current-time))
-	  (emacs-pid) (system-name)))
+  (let ((now (time-convert nil 'integer)))
+    (format "<%s.%s.%s@%s>" (ash now -16) (logand now 65535)
+	    (emacs-pid) (system-name))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -45,11 +45,11 @@
 (defvar mew-oauth2-resource-url "https://mail.google.com/"
   "URL used to request access to Mail Resources.")
 
-;;; MS356
+;;; MS365
 
 ;;(setq mew-oauth2-auth-url "https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize")
 ;;(setq mew-oauth2-token-url "https://login.microsoftonline.com/organizations/oauth2/v2.0/token")
-;;(setq mew-oauth2-resource-url "https://outlook.office.com/IMAP.AccessAsUser.All https://outlook.office.com/SMTP.Send offline_access")
+;;(setq mew-oauth2-resource-url "https://outlook.office.com/IMAP.AccessAsUser.All https://outlook.office.com/POP.AccessAsUser.All https://outlook.office.com/SMTP.Send offline_access")
 
 (defun mew-oauth2-debug (label string)
   (when (mew-debug 'oauth2)
@@ -126,8 +126,16 @@ It serves http://localhost:PORT"
   (when (string-match "^GET \\([^ \r\n]*\\)" string)
     (let* ((request (mew-match-string 1 string))
 	   (code (mew-oauth2-query-get request "code"))
+	   (err (mew-oauth2-query-get request "error"))
 	   (state (mew-oauth2-query-get request "state")))
       (cond
+       ((and err (null code) (stringp mew-oauth2-state)
+	     (equal state mew-oauth2-state))
+	;; The user denied it, for instance: stop waiting.
+	(mew-oauth2-respond
+	 proc "200 OK" (concat "Mew was not authorized: " err "\n"))
+	(message "OAuth2: not authorized (%s)" err)
+	(setq mew-oauth2-code ""))
        ((null code)
 	()) ;; not the redirect we are waiting for
        ((not (and (stringp mew-oauth2-state)

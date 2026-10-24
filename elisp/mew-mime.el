@@ -10,6 +10,8 @@
 (eval-when-compile
   (require 'mew-env0))
 
+(defvar shr-blocked-images)
+
 (eval-when-compile
   (cond
    ((memq system-type '(windows-nt cygwin))
@@ -263,7 +265,8 @@
 					mew-use-text/html-list-type)))
 	      (progn
 		(save-window-excursion
-		  (funcall mew-prog-text/html start (point-max)))
+		  (let ((shr-blocked-images mew-html-blocked-images))
+		    (funcall mew-prog-text/html start (point-max))))
                 (delete-trailing-whitespace start (point-max))
 		(mew-highlight-body-region start (point-max)))
 	    (mew-message-for-summary "To parse HTML, type '\\[mew-summary-analyze-again]'"))))
@@ -430,13 +433,14 @@
       (insert "\n")
       (mew-mime-part-messages t))))
 
-(defun mew-mime-image/*-ext (cache begin end &optional _params fname _ct _cte)
-  (let ((file (mew-make-temp-name fname)))
-    (save-excursion
-      (set-buffer cache)
-      (mew-flet
-       (write-region begin end file nil 'no-msg)))
-    (mew-mime-image-ext file)))
+(defun mew-mime-image/*-ext (cache begin end &optional _params fname ct _cte)
+  (when (mew-mime-suffix-agree-p fname (or ct "Image"))
+    (let ((file (mew-make-temp-name fname)))
+      (save-excursion
+        (set-buffer cache)
+	(mew-flet
+	 (write-region begin end file nil 'no-msg)))
+      (mew-mime-image-ext file))))
 
 (defun mew-mime-image-ext (file)
   (let* ((spec mew-prog-image/*-ext)
@@ -796,9 +800,39 @@ See `mew-mime-content-type' to know how actions can be defined."
 	(funcall program cache begin end params))))))
 
 ;;; external
+(defun mew-mime-suffix-agree-p (fname ct)
+  "Return t if the suffix of FNAME fits CT, or the user accepts it.
+Viewers such as open and fiber choose an application by the suffix,
+which comes from the message, not by CT."
+  (let* ((case-fold-search t)
+	 (major (downcase (car (split-string ct "/")))))
+    (cond
+     ((or (null fname) (not (string-match "\\.[^.]+\\'" fname))) t)
+     ((catch 'found
+	(dolist (ent mew-mime-content-type)
+	  (let ((ect (nth 0 ent)) (regex (nth 1 ent)))
+	    (and (stringp ect) (stringp regex)
+		 (string-match regex fname)
+		 ;; audio/x-wav for audio/wav and the like
+		 (or (string-match (concat "\\`" ect "\\'") ct)
+		     (and (member major '("audio" "image" "video"))
+			  (string-match (concat "\\`" major "/") ect)))
+		 (throw 'found t)))))
+      t)
+     ((y-or-n-p (format "%s does not look like %s. Open it anyway? "
+			fname ct))
+      t)
+     (t
+      (message "Not opened")
+      nil))))
+
 (defun mew-summary-execute-program (program ct ctl cache begin end _params fname options async)
-  (if (not (mew-which-exec program))
-      (message "%s does not exist" program)
+  (cond
+   ((not (mew-which-exec program))
+    (message "%s does not exist" program))
+   ((not (mew-mime-suffix-agree-p fname ct))
+    ())
+   (t
     (let ((file (mew-make-temp-name fname))
 	  wcs)
       (save-excursion
@@ -826,10 +860,10 @@ See `mew-mime-content-type' to know how actions can be defined."
 			    begin end))
 			mew-cs-text-for-write)))))
 	(mew-frwlet mew-cs-dummy wcs
-	  (write-region begin end file nil 'no-msg))
+		    (write-region begin end file nil 'no-msg))
 	(if async
 	    (mew-mime-start-process program options file)
-	  (mew-mime-call-process program options file))))))
+	  (mew-mime-call-process program options file)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

@@ -35,10 +35,16 @@ typedef unsigned char		u_int8_t;
 typedef unsigned short		u_int16_t;
 typedef unsigned long		u_int32_t;
 typedef unsigned __int64	u_int64_t;
+/* Visual C++ 2010 and later have <stdint.h>.  utf8proc.h includes it,
+   and the typedefs below would clash with it. */
+#if defined(_MSC_VER) && _MSC_VER >= 1600
+#include <stdint.h>
+#else
 typedef signed char		int8_t;
 typedef signed short		int16_t;
 typedef signed long		int32_t;
 typedef signed __int64		int64_t;
+#endif
 
 typedef u_int32_t pid_t;	/* process ID */
 
@@ -116,7 +122,10 @@ typedef u_int32_t gid_t;	/* group ID */
 
 #define strcasecmp     stricmp
 #define strncasecmp    strnicmp
+/* Visual C++ 2015 and later have snprintf; stdio.h rejects the macro. */
+#if _MSC_VER < 1900
 #define snprintf       _snprintf
+#endif
 #if _MSC_VER < 1500
 #define vsnprintf      _vsnprintf
 #endif

@@ -764,6 +764,42 @@ key not found\", so the old code matched nothing and said nothing."
 ")
                  (concat mew-pgp-result-pubkey ": ID = 0x92C290C24E89A9BF"))))
 
+(ert-deftest mew-test-pgp-multiple-signatures ()
+  "Each signature is reported, so one which fails is not hidden behind a
+good one.  NEWSIG carries the signer's user id when GnuPG signed."
+  (should (equal (mew-test-pgp-check "\
+[GNUPG:] NEWSIG bob@example.org
+[GNUPG:] GOODSIG 19C793F3C9077C41 bob <bob@example.org>
+[GNUPG:] TRUST_ULTIMATE 0 pgp bob@example.org
+[GNUPG:] NEWSIG alice@example.org
+[GNUPG:] BADSIG 627EF3AB122F9CAE alice <alice@example.org>
+[GNUPG:] FAILURE gpg-exit 33554433
+")
+                 "Good PGP sign \"bob <bob@example.org>\" COMPLETE;
+	BAD PGP sign \"alice <alice@example.org>\""))
+  (should (equal (mew-test-pgp-check "\
+[GNUPG:] NEWSIG
+[GNUPG:] GOODSIG 19DF85F733400613 CCCCC <test1@example.com>
+[GNUPG:] TRUST_UNDEFINED 0 pgp
+[GNUPG:] NEWSIG
+[GNUPG:] ERRSIG CAE5F02472CC2D6C 1 8 00 1792645734 9 DE13594E905E1E5AC5F4BE1ACAE5F02472CC2D6C
+[GNUPG:] NO_PUBKEY CAE5F02472CC2D6C
+")
+                 (concat "Good PGP sign \"CCCCC <test1@example.com>\" UNDEFINED;\n\t"
+                         mew-pgp-result-pubkey ": ID = 0xCAE5F02472CC2D6C")))
+  ;; GnuPG 1 writes no NEWSIG
+  (should (equal (mew-test-pgp-check "\
+[GNUPG:] SIG_ID OovOi21T1J0okCQb00Iu+3SCWeE 2026-10-07 1791379579
+[GNUPG:] GOODSIG 19DF85F733400613 CCCCC <test1@example.com>
+[GNUPG:] VALIDSIG F2AEB68F0E814A50000F00B219DF85F733400613 2026-10-07 1791379579 0 4 0 1 10 00 F2AEB68F0E814A50000F00B219DF85F733400613
+[GNUPG:] TRUST_ULTIMATE
+[GNUPG:] KEYEXPIRED 1791466100
+[GNUPG:] SIGEXPIRED deprecated-use-keyexpired-instead
+[GNUPG:] BADSIG CAE5F02472CC2D6C DDDDD <test1@example.com>
+")
+                 "Good PGP sign \"CCCCC <test1@example.com>\" COMPLETE;
+	BAD PGP sign \"DDDDD <test1@example.com>\"")))
+
 (ert-deftest mew-test-pgp-decryption ()
   "The signature inside an encrypted message is found as well."
   (should (equal (mew-test-pgp-check "\
@@ -1398,6 +1434,157 @@ apart by whether GnuPG says it considered a key at all."
 		   (concat mew-pgp-result-seckey-nousable ": noselfsig@example.org")))
     ;; GnuPG 1 says nothing of this sort, so the old path keeps its say
     (should-not (check "gpg: skipped \"a@example.org\": secret key not available\n"))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; mew-syntax.el: the part of a security result painted as bad
+;;;
+
+(ert-deftest mew-test-syntax-bad-sign-face ()
+  "Only the verdict of a bad signature is painted, not the user id."
+  (cl-flet ((bad (result)
+	      (with-temp-buffer
+		(mew-xinfo-set-pri-result result)
+		(mew-decode-syntax-insert-privacy)
+		(let ((pos (point-min)) ret next)
+		  (while (< pos (point-max))
+		    (setq next (next-single-property-change pos 'face nil (point-max)))
+		    (if (eq (get-text-property pos 'face) 'mew-face-header-xmew-bad)
+			(push (buffer-substring-no-properties pos next) ret))
+		    (setq pos next))
+		  (nreverse ret)))))
+    (should (equal (bad "BAD PGP sign \"Alice <signer@example.org>\"")
+		   '("BAD PGP sign")))
+    (should (equal (bad "Bad PGP sign \"Carol <carol@example.org>\"")
+		   '("Bad PGP sign")))
+    (should (equal (bad "BAD S/MIME sign") '("BAD S/MIME sign")))
+    (should-not (bad "Good PGP sign \"Tom Badger <tom@designs.example>\" COMPLETE"))))
+
+(ert-deftest mew-test-cs-m17n ()
+  "Files are written in UTF-8, and old ctext files still read back."
+  (let ((file (make-temp-file "mew-test"))
+	(strs '("abc" "漢字かな" "한국어" "Ελληνικά" "ไทย" "See you 👍")))
+    (cl-flet ((rd ()
+		(with-temp-buffer
+		  (let ((coding-system-for-read mew-cs-m17n))
+		    (insert-file-contents file))
+		  (buffer-string)))
+	      (wr (s cs)
+		(let ((coding-system-for-write cs))
+		  (write-region s nil file nil 'silent))))
+      (unwind-protect
+	  (dolist (s strs)
+	    (wr s mew-cs-m17n)
+	    (should (equal (rd) s))
+	    (should (equal (with-temp-buffer
+			     (set-buffer-multibyte nil)
+			     (insert-file-contents-literally file)
+			     (buffer-string))
+			   (encode-coding-string s 'utf-8-unix)))
+	    (unless (string-match "👍" s)
+	      (wr s 'ctext-unix)
+	      (should (equal (rd) s))))
+	(delete-file file)))))
+
+(ert-deftest mew-test-lisp-save-load-emoji ()
+  "Lisp data files keep characters that ctext cannot hold."
+  (let ((file (make-temp-file "mew-test"))
+	(data '(("a@example.org" "Taro 👍") ("x" . "漢字"))))
+    (unwind-protect
+	(progn
+	  (mew-lisp-save file data nil 'unlimit)
+	  (should (equal (mew-lisp-load file) data)))
+      (delete-file file))))
+
+(ert-deftest mew-test-mime-suffix-agree-p ()
+  "A suffix that does not fit Content-Type: is asked about."
+  (require 'mew-varsx)
+  (let (asked)
+    (cl-letf (((symbol-function 'y-or-n-p) (lambda (_) (setq asked t) nil))
+	      ((symbol-function 'message) #'ignore))
+      (dolist (c '(("clip.mpg" "Video/Mpeg") ("a.zip" "Application/X-Zip-Compressed")
+		   ("song.mp3" "Audio/Mpeg") ("a.wav" "Audio/Wav")
+		   ("photo.JPG" "Image/Jpeg") ("report" "Application/Pdf")
+		   (nil "Application/Pdf")))
+	(setq asked nil)
+	(should (mew-mime-suffix-agree-p (car c) (cadr c)))
+	(should-not asked))
+      (dolist (c '(("clip.hta" "Video/Mpeg") ("invoice.pdf.exe" "Application/Pdf")
+		   ("evil.terminal" "Image/Png")))
+	(setq asked nil)
+	(should-not (mew-mime-suffix-agree-p (car c) (cadr c)))
+	(should asked)))))
+
+(ert-deftest mew-test-param-analyze-broken ()
+  "Encoded words in a parameter are decoded once, left to right."
+  (cl-letf (((symbol-function 'mew-decode-warning-params) #'ignore))
+    (dolist (c '(("=?utf-8?B?5pel5pys?= =?utf-8?B?6Kqe?=.pdf" . "日本語.pdf")
+		 ("head =?utf-8?B?5pel?= mid =?utf-8?Q?=E6=9C=AC?=end"
+		  . "head 日 mid 本end")
+		 ("=?utf-8?B?5pel?==?utf-8?B?5pys?=" . "日本")
+		 ("plain.txt" . "plain.txt")
+		 ;; Decoded text is not decoded again.
+		 ("=?utf-8?Q?=3D=3Futf-8=3FB=3F5pel=3F=3D?=" . "=?utf-8?B?5pel?=")))
+      (should (equal (mew-param-analyze-broken (car c) "filename") (cdr c))))
+    (let ((v (apply #'concat (make-list 20000 "=?utf-8?B?YQ==?="))))
+      (should (equal (mew-param-analyze-broken v "filename")
+		     (make-string 20000 ?a))))))
+
+(ert-deftest mew-test-passwd-token-with-auth-source ()
+  "OAuth2 tokens are kept in memory; passwords still go to auth-source."
+  (let ((mew-master-passwd-type 'auth-source)
+	(mew-passwd-alist nil)
+	(token (make-hash-table))
+	stored)
+    (cl-letf (((symbol-function 'mew-passwd-auth-source-get-passwd)
+	       (lambda (_key) "secret"))
+	      ((symbol-function 'mew-passwd-auth-source-set-passwd)
+	       (lambda (key val) (push (cons key val) stored))))
+      (should (equal (mew-passwd-get-passwd "u@h:imap") "secret"))
+      (mew-passwd-set-passwd "u@h:imap" token)
+      (should (eq (mew-passwd-get-passwd "u@h:imap") token))
+      (should-not stored)
+      (mew-passwd-set-passwd "u@h:imap" nil)
+      (should-not stored)
+      (mew-passwd-set-passwd "u@h:pop" "pass")
+      (should (equal stored '(("u@h:pop" . "pass")))))))
+
+(ert-deftest mew-test-save-file-name-default ()
+  "A name from a message never makes a dot file or leaves the directory."
+  (dolist (c '((".zshenv" . "zshenv") ("report.pdf" . "report.pdf")
+	       ("../../.bashrc" . "bashrc") ("/etc/passwd" . "passwd")
+	       (".config/autostart/x.desktop" . "x.desktop")
+	       ("..." . nil) (nil . nil)))
+    (should (equal (mew-save-file-name-default (car c)) (cdr c)))))
+
+(ert-deftest mew-test-bimi-pass-p ()
+  "Only the topmost Authentication-Results: counts for BIMI."
+  (mew-regex-setup) ;; mew-eoh
+  (cl-flet ((pass (hdr &optional ids)
+	      (with-temp-buffer
+		(insert hdr "Subject: s\n\nbody\n")
+		(goto-char (point-min))
+		(let ((mew-bimi-authserv-id-list ids))
+		  (and (mew-bimi-pass-p) t)))))
+    (let ((own "Authentication-Results: mx.example.net; dkim=pass\n")
+	  (own-pass "Authentication-Results: mx.example.net; bimi=pass\n")
+	  (forged "Authentication-Results: x; bimi=pass\n"))
+      (should (pass own-pass))
+      (should-not (pass (concat own forged)))
+      (should-not (pass forged '("mx.example.net")))
+      (should (pass own-pass '("MX.example.net")))
+      (should-not (pass "")))))
+
+(ert-deftest mew-test-debug-redact ()
+  "Credentials do not reach the debug buffer; other commands do."
+  (dolist (c '(("PASS secret" . "PASS ********")
+	       ("AUTHINFO PASS secret" . "AUTHINFO PASS ********")
+	       ("LOGIN \"kazu\" \"secret\"" . "LOGIN \"kazu\" ********")
+	       ("AUTH PLAIN AGthenUAc2VjcmV0" . "AUTH PLAIN ********")
+	       ("c2VjcmV0" . "********")
+	       ("AUTH LOGIN" . "AUTH LOGIN") ("STARTTLS" . "STARTTLS")
+	       ("USER kazu" . "USER kazu") ("RETR 3" . "RETR 3")))
+    (should (equal (mew-debug-redact (car c)) (cdr c)))))
 
 (provide 'mew-test)
 

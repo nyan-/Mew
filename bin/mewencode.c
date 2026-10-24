@@ -74,9 +74,10 @@ private void write_binary(void);
 private void base64_decode(int);
 private void gzip64_decode(int);
 private void quoted_printable_encode(int);
+private int  xlate(const signed char *, unsigned int, int);
 private int  puthexchar(int, int);
 private void quoted_printable_decode(void);
-private void uu_decode(int);
+private void uu_decode(void);
 private void check_8bit(void);
 
 /****************************************************************
@@ -117,7 +118,6 @@ help_message[] = {
 	"Default is Encoding, Base64, Length = 70, Binary.",
 	"If <infile> is \"-\", it means the standard input.",
 	"If <outfile> is \"-\", it means the standard output.",
-	"If <outfile> is given for uudecoding, an embedded file is used.",
 	NULL
 };
 
@@ -458,8 +458,28 @@ private byte d_buf2[BUFSIZ];
 #endif /* HAVE_LIBZ */
 private byte d_buf3[BUFSIZ];
 
+/*
+ * The tables below cover every octet, but getchar() also yields EOF, and
+ * puthexchar() takes whatever its caller hands it. Casting to unsigned
+ * folds a negative c into a large one, so one comparison covers both ends.
+ * XLATE() wants the table itself, not a pointer to it.
+ */
+private int
+xlate(const signed char *tbl, unsigned int size, int c)
+{
+	return ((unsigned int)c < size) ? tbl[c] : OOB;
+}
+
+#define XLATE(tbl, c)	xlate((tbl), sizeof(tbl), (c))
+
+/*
+ * getchar() yields any of the 256 octets, so a table it indexes has to
+ * cover all of them. OOB is -1, so the upper half is spelled out rather
+ * than left to the default initializer, which would fill it with 0 --
+ * the base64 digit for 'A'.
+ */
 private signed char
-base256[] = {
+base256[256] = {
 	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,ELF,OOB, OOB,ECR,OOB,OOB,
     
 	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
@@ -475,6 +495,15 @@ base256[] = {
 	OOB, 26, 27, 28,  29, 30, 31, 32,  33, 34, 35, 36,  37, 38, 39, 40,
       /*  p   q   r   s    t   u   v   w    x   y   z                     */
 	 41, 42, 43, 44,  45, 46, 47, 48,  49, 50, 51,OOB, OOB,OOB,OOB,OOB, 
+      /*  0x80 to 0xff are not base64 characters                        */
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
 };
 
 private int
@@ -492,7 +521,7 @@ read_base64(byte *p, unsigned int max)
 			done = YES;
 			return out;
 		}
-		d = base256[c];
+		d = XLATE(base256, c);
 		switch (d) {
 		case OOB:
 			warning("invalid base64 character.");
@@ -827,8 +856,12 @@ quoted_printable_encode(int length)
 	if (len > 0) softbreak(); /* ignored by decoder */
 }
 
+/*
+ * The hex digits. Indexed by an octet like base256 above, so it covers
+ * all 256 of them in spite of its name.
+ */
 private signed char
-base128[] = {
+base128[256] = {
 	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
 	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
 	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
@@ -836,6 +869,15 @@ base128[] = {
 	OOB, 10, 11, 12,  13, 14, 15,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
 	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
 	OOB, 10, 11, 12,  13, 14, 15,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+      /*  0x80 to 0xff are not hex digits                               */
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
+	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
 	OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB, OOB,OOB,OOB,OOB,
 };
 
@@ -845,7 +887,8 @@ puthexchar(int c1, int c2)
 	int a1, a2;
 	static int warned = NO;
 
-	if (((a1 = base128[c1]) != OOB) && ((a2 = base128[c2]) != OOB)) {
+	if (((a1 = XLATE(base128, c1)) != OOB) &&
+	    ((a2 = XLATE(base128, c2)) != OOB)) {
 		putchar(((a1 << 4) | a2));
 		return(TRUE);
 	} else {
@@ -907,29 +950,19 @@ quoted_printable_decode()
  */
 
 private char Uu_read_buf[BUFSIZ];
-private char Uu_flnm_buf[BUFSIZ];
 
 #define uuchar(c) (((c) - SP) & 0x3f)
 
 private void
-uu_decode(int use_file_name)
+uu_decode(void)
 {
 	int n, c1, c2, c3, c4;
-	char *p, *q;
+	char *p;
 
+	/* The name on the begin line is not used: it comes from the data. */
 	while (fgets(Uu_read_buf, sizeof(Uu_read_buf), stdin) != NULL) {
-		if (STRCMP(Uu_read_buf, "begin ") == 0) {
-			if (use_file_name == YES) {
-				if ((p = strchr(Uu_read_buf + 6, SP)) == NULL)
-					warn_exit("no filename for uudecode.");
-				p++;
-				for (q = Uu_flnm_buf; *p != LF; p++, q++)
-					*q = *p;
-				if (freopen(Uu_flnm_buf, FDWRITE, stdout) == NULL)
-					warn_exit("can't open a file.");
-			}
+		if (STRCMP(Uu_read_buf, "begin ") == 0)
 			break;
-		}
 	}
 
 	while (fgets(Uu_read_buf, sizeof(Uu_read_buf), stdin) != NULL) {
@@ -966,8 +999,6 @@ uu_decode(int use_file_name)
 			n = n - 3;
 		}
 	}
-	if (use_file_name == YES)
-		fprintf(stderr, "filename: %s\n", Uu_flnm_buf);
 }
 
 /****************************************************************
@@ -1006,7 +1037,6 @@ main(int argc, char **argv)
 	char encode = BASE64;	/* -b -q -g */
 	int  length = LINELEN;	/* -l num */
 	int  text   = NO;	/* -t */
-	int  use_file_name = NO;
 	char *progname = getprognm(argv[0]);
 
 	warn_prog = progname;
@@ -1087,8 +1117,6 @@ main(int argc, char **argv)
 		Optind++;
 		if (STRCMP(argv[Optind], "-") == 0)
 			;
-		else if (encode == UU)
-			use_file_name = YES;
 		else if (freopen(argv[Optind], FDWRITE, stdout) == NULL)
 			warn_exit("can't open file %s.", argv[Optind]);
 		break;
@@ -1127,7 +1155,7 @@ main(int argc, char **argv)
 			gzip64_decode(text);
 			break;
 		case UU:
-			uu_decode(use_file_name);
+			uu_decode();
 			break;
 		}
 		break;

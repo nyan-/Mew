@@ -18,6 +18,7 @@ private char version_message[] = "version 6.11 20260414 Mew developing team";
 #include <sys/types.h>
 #include <signal.h>
 #include <errno.h>
+#include <limits.h>
 
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
@@ -104,6 +105,7 @@ private int	get_from_dir(int, char *, char *, int);
 private int	process_maildir(int);
 private int	lock_mbox(char *);
 private void	unlock_mbox(char *);
+private int	cl_ends_message(FILE *, long);
 private int	process_mbox(int);
 private int	process_stdin(int);
 private void	process(void);
@@ -513,9 +515,8 @@ new_inbox_file(int seq, char inboxfile[])
 
 	do {
 		snprintf(num, sizeof(num), "%d%s", ++seq, suffix);
-		if (strlen(InboxDir) + strlen(num) + 2 > PATH_MAX)
+		if (snprintf(inboxfile, PATH_MAX, "%s/%s", InboxDir, num) >= PATH_MAX)
 			error("pathname too long (%s/%s)", InboxDir, num);
-		snprintf(inboxfile, PATH_MAX, "%s/%s", InboxDir, num);
 		if (access(inboxfile, F_OK) && errno == ENOENT)
 			break;
 	} while (TRUE);
@@ -534,9 +535,8 @@ open_new_inbox_file(int *seq, char inboxfile[])
 
 	for (;;) {
 		snprintf(num, sizeof(num), "%d%s", ++*seq, suffix);
-		if (strlen(InboxDir) + strlen(num) + 2 > PATH_MAX)
+		if (snprintf(inboxfile, PATH_MAX, "%s/%s", InboxDir, num) >= PATH_MAX)
 			error("pathname too long (%s/%s)", InboxDir, num);
-		snprintf(inboxfile, PATH_MAX, "%s/%s", InboxDir, num);
 		if ((fd = open(inboxfile, flag, FileMode)) >= 0 ||
 		    errno != EEXIST)
 			break;
@@ -664,12 +664,41 @@ unlock_mbox(char *lockfile)
 		unlink(lockfile);
 }
 
+/*
+ * TRUE if a body of n bytes from here ends a line and is followed only by
+ * blank lines and then "From " or the end, so that Content-Length cannot
+ * take in the next message.
+ */
+private int
+cl_ends_message(FILE *fp, long n)
+{
+	off_t here = ftello(fp);
+	struct stat sb;
+	char from[5];
+	int c, ok = FALSE;
+
+	if (here < 0 || fstat(fileno(fp), &sb) < 0 || here + n > sb.st_size)
+		return FALSE;
+	if (fseeko(fp, here + n - (n > 0), SEEK_SET) == 0 &&
+	    (n == 0 || getc(fp) == '\n')) {
+		while ((c = getc(fp)) == '\n' || c == '\r')
+			;
+		from[0] = c;
+		ok = c == EOF ||
+		     (fread(from + 1, 1, 4, fp) == 4 && memcmp(from, "From ", 5) == 0);
+	}
+	if (fseeko(fp, here, SEEK_SET) != 0)
+		error("fseeko(%s)", Mbox);
+	return ok;
+}
+
 private int
 process_mbox(int seq)
 {
 	char inboxfile[PATH_MAX];
 	char emptyline[3];
 	char *ln;
+	size_t len;
 	int srcfd, oflag;
 	FILE *srcfp = NULL;
 	FILE *dstfp = NULL;
@@ -698,7 +727,7 @@ process_mbox(int seq)
 		warning("fdopen(%s) for read", Mbox);  goto rerr;
 	}
 
-	while ((ln = Getline(srcfp)) != NULL) {
+	while ((ln = Getline(srcfp, &len)) != NULL) {
 		if (Exit)
 			goto werr;
 		switch (state) {
@@ -708,7 +737,7 @@ process_mbox(int seq)
 				if (dstfp == NULL)
 					goto rerr;
 				if (PreserveUnixFrom &&
-				    fputs(ln, dstfp) == EOF) {
+				    fwrite(ln, 1, len, dstfp) != len) {
 					warning("fputs(%s)", inboxfile);
 					goto werr;
 				}
@@ -716,22 +745,26 @@ process_mbox(int seq)
 			}
 			break;
 		case ST_HEADER:
-			if (strlen(ln) < 3 &&
+			if (len < 3 &&
 			    (ln[0] == '\n' || ln[0] == '\r')) {
 				STRCPY(emptyline, ln);
 				state = ST_BODY_AFTER_EMPTY_LINE;
+				if (bytes >= 0 && !cl_ends_message(srcfp, bytes))
+					bytes = -1;
 				break;
 			}
-			if (fputs(ln, dstfp) == EOF) {
+			if (fwrite(ln, 1, len, dstfp) != len) {
 				warning("fputs(%s)", inboxfile);  goto werr;
 			}
 			if (UseCL &&
-			    strncasecmp(ln, "Content-Length", 14) == 0) {
-				int i;
-				for (i = 14; i < strlen(ln); i++)
-					if (isdigit((unsigned char)ln[i]))
-						break;
-				bytes = atoi(&ln[i]);
+			    strncasecmp(ln, "Content-Length:", 15) == 0) {
+				char *end;
+				long n;
+
+				errno = 0;
+				n = strtol(ln + 15, &end, 10);
+				bytes = (end != ln + 15 && errno == 0 &&
+					 n >= 0 && n <= INT_MAX) ? (int)n : -1;
 			}
 			break;
 		case ST_BODY_AFTER_EMPTY_LINE:
@@ -744,7 +777,7 @@ process_mbox(int seq)
 				if (dstfp == NULL)
 					goto rerr;
 				if (PreserveUnixFrom &&
-				    fputs(ln, dstfp) == EOF) {
+				    fwrite(ln, 1, len, dstfp) != len) {
 					warning("fputs(%s)", inboxfile);
 					goto werr;
 				}
@@ -755,7 +788,7 @@ process_mbox(int seq)
 				goto werr;
 			/* FALLTHRU */
 		case ST_BODY:
-			if (strlen(ln) < 3 &&
+			if (len < 3 &&
 			    (ln[0] == '\n' || ln[0] == '\r')) {
 				STRCPY(emptyline, ln);
 				state = ST_BODY_AFTER_EMPTY_LINE;
@@ -763,10 +796,10 @@ process_mbox(int seq)
 			else
 				state = ST_BODY;
 
-			if (state == ST_BODY && fputs(ln, dstfp) == EOF)
+			if (state == ST_BODY && fwrite(ln, 1, len, dstfp) != len)
 				goto werr;
 			if (bytes >= 0) {
-				bytes -= strlen(ln);
+				bytes -= len;
 				if (bytes <= 0) {
 					if (fclose(dstfp))
 						goto rerr;
@@ -811,16 +844,17 @@ process_stdin(int seq)
 {
 	char inboxfile[PATH_MAX];
 	char *ln;
+	size_t len;
 	FILE *srcfp = stdin;
 	FILE *dstfp;
 
 	if ((dstfp = open_new_inbox_file(&seq, inboxfile)) == NULL)
 		goto rerr;
 
-	while ((ln = Getline(srcfp)) != NULL) {
+	while ((ln = Getline(srcfp, &len)) != NULL) {
 		if (Exit)
 			goto werr;
-		if (fputs(ln, dstfp) == EOF) {
+		if (fwrite(ln, 1, len, dstfp) != len) {
 			warning("fputs(%s)", inboxfile);  goto werr;
 		}
 		free(ln);
@@ -868,9 +902,9 @@ process(void)
 	/* update .mew-mtime file if new mail arrived */
 	if (!CreateMTime || newseq <= seq)
 		return;		/* no new mail */
-	if (strlen(InboxDir) + strlen(MEW_MTIME_FILE) + 1 > PATH_MAX)
-		error("pathname too long (%s%s)", InboxDir, MEW_MTIME_FILE);
-	snprintf(mtimefile, sizeof(mtimefile), "%s/%s", InboxDir, MEW_MTIME_FILE);
+	if (snprintf(mtimefile, sizeof(mtimefile), "%s/%s", InboxDir,
+		     MEW_MTIME_FILE) >= (int)sizeof(mtimefile))
+		error("pathname too long (%s/%s)", InboxDir, MEW_MTIME_FILE);
 
 	if ((fp = fopen(mtimefile, FDWRITE)) == NULL)
 		error("can't create file (%s)", mtimefile);
